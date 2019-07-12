@@ -19,7 +19,7 @@ Notes on how to run it. Can be sprinkled with code and examples.
 
 ## Output
 Fancy gifs and graphs go here.
-
+:-)
 
 # Authors
 - **Amy Thompson**
