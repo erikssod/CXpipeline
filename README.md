@@ -22,10 +22,10 @@ Fancy gifs and graphs go here.
 
 
 # Authors
-- *Amy Thompson*
-- *Dr Kate Smith*
-- *Dr Daniel Eriksson*
-- *Dr Jason Price*
+- **Amy Thompson**
+- **Dr Kate Smith**
+- **Dr Daniel Eriksson**
+- **Dr Jason Price**
 
 # Acknowledgements
 - *Dr Arnaud Grosjean*
