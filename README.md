@@ -28,4 +28,4 @@ Fancy gifs and graphs go here.
 - **Dr Jason Price**
 
 # Acknowledgements
-- *Dr Arnaud Grosjean*
+- **Dr Arnaud Grosjean**
