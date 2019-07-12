@@ -14,6 +14,9 @@ $ pip install -r requirements.txt
 ```
 
 ## Run
+```
+$ ./app.py
+```
 Notes on how to run it. Can be sprinkled with code and examples.
 
 
