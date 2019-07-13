@@ -14,10 +14,15 @@ $ pip install -r requirements.txt
 ```
 
 ## Run
+Down the line, code will be called from:
 ```
 $ ./app.py
 ```
-Notes on how to run it. Can be sprinkled with code and examples.
+For now, put any code snippets under /src and run them directly *e.g.*:
+```
+cd src
+./example_read_and_parse.py
+```
 
 
 ## Output

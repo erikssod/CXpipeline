@@ -1,7 +1,16 @@
-level1:
-    line1: foo
-    line2: 123
+data:
+    example_data: ../example_data/WaP.txt
 
-level2:
-    dict: {'abc:':'def'}
-    list: [1,2,3,4,5]
+lookfor: 
+ - autum
+ - winter
+ - spring
+ - summer
+
+# level1:
+#     line1: foo
+#     line2: 123
+# 
+# level2:
+#     dict: {'abc:':'def'}
+#     list: [1,2,3,4,5]
