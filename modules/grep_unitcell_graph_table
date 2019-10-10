@@ -1,0 +1,77 @@
+#!/bin/env python3.7
+#-----------------------------------------------------------------------------
+# This program reads in a UNIT_CELL_CONTENTS .txt file obtained from
+# running the following command in a directory holding multiple datasets
+# grep -r 'UNIT_CELL_CONSTANTS=' | tee unitcells.txt
+#
+# To execute this program provide the python script and a file:
+# ./grep_unitcell_graph_table.py unitcells.txt
+#
+# This will then automatically generate a table and  graph from the .txt file
+# and save this as a .csv and .png file in the working directory respectively
+#-----------------------------------------------------------------------------
+
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+import os
+import re
+import sys
+import pandas as pd
+import numpy as np
+
+# Open the file and read into a string
+with open(sys.argv[1], 'rt') as myfile:
+    contents = myfile.read()
+table = contents.split('\n')
+
+# Split the rows of the table into individual elements
+n = 0
+data = []
+for item in table:
+    data.append(table[n].split())
+    n+=1
+df = pd.DataFrame(data,columns=['Filename','a','b','c',
+                                'alpha','beta','gamma'],dtype=float)
+df.drop(df.tail(1).index,inplace=True)
+
+#Extract temperature to separate column
+temp = []
+for index, value in enumerate(df.Filename):
+    x = value.split('_')[3][:3]
+    temp.append(x)
+df['Temp/K'] = temp
+
+#Calculate V
+df['V'] = df['a']*df['b']*df['c']
+
+# Normalize a,b,c,V
+df['a_norm']=(df['a']-df['a'].min())/(df['a'].max()-df['a'].min())
+df['b_norm']=(df['b']-df['b'].min())/(df['b'].max()-df['b'].min())
+df['c_norm']=(df['c']-df['c'].min())/(df['c'].max()-df['c'].min())
+df['V_norm']=(df['V']-df['V'].min())/(df['V'].max()-df['V'].min())
+
+
+#Graph parameters
+x = df['Temp/K']
+y1 = df['a_norm']
+y2 = df['b_norm']
+y3 = df['c_norm']
+y4 = df['V_norm']
+
+#Graph the following using matplotlib and numpy
+plt.subplot()
+plt.title('Temperature vs cell parameters')
+plt.plot(x, y1, 'o-',color='m')
+plt.plot(x, y2, 'o-',color='b')
+plt.plot(x, y3, 'o-',color='g')
+plt.plot(x, y4, 'o-',color='r')
+
+plt.xlabel('T / K')
+plt.xticks(rotation=90)
+plt.ylabel('Normalized cell parameters')
+plt.tight_layout()
+plt.legend(['a','b','c','V'])
+
+plt.savefig('Temp-cell.png',bbox_inches='tight',pad_inches=0.1)
+df.to_csv(os.path.join(sys.argv[1].split('.')[0]+'.csv')) 
