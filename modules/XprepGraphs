@@ -1,0 +1,132 @@
+#!/bin/env python3.7
+
+#------------------------------------------------------------------
+# This program reads in Xprep .prp files (e.g. XDS_ASCII.prp)
+# To execute this program provide the python script and a file:
+#
+# $./Xprep_graphs XDS_ASCII.prp
+#
+# This will then automatically generate graphs from the log file
+# and save this as a .png file in the working directory
+#------------------------------------------------------------------
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+import os
+import re
+import sys
+from sys import stdout
+import pandas as pd
+import numpy as np
+from logbook import Logger, StreamHandler, set_datetime_format
+
+class Xprep_graphs():
+    def __init__(self):
+        StreamHandler(stdout).push_application()
+        self.logger = Logger(self.__class__.__name__)
+        set_datetime_format("local")
+
+        if len(sys.argv) < 2:
+            if os.path.isfile('XDS_ASCII.prp') is False:
+                self.logger.warning('No .prp file provided, no XDS_ASCII.prp file in directory. Aborting')
+                self.x = None
+                self.y = None
+                pass
+            else:
+                self.logger.info('No .prp file provided, using XDS_ASCII.prp as default')
+                with open('XDS_ASCII.prp') as myfile:
+                    self.contents = myfile.read()
+		search_table()
+               # self.x = re.search(" Inf",self.contents)  
+               # self.y = re.search("Merged",self.contents)
+        else:
+            with open(sys.argv[1], 'rt') as myfile:
+                self.contents = myfile.read()
+            self.logger.info(f'{sys.argv[1]} file provided was successfully read into the program')
+	    search_table()
+            #self.x = re.search(" Inf",self.contents)
+            #self.y = re.search("Merged",self.contents)
+
+     def search_table(self):
+         #Search file for beginning and ending of stats table
+         self.x = re.search(" Inf",contents)
+         self.y = re.search("Merged",contents)
+
+    def extract_table(self):
+        if self.x is None and self.y is None:
+            pass
+        else:
+            stats_table = self.contents[self.x.start():self.y.start()].split('\n')
+
+        # Split the rows of the stats table into individual elements
+            n = 0
+            data = []
+            for item in stats_table:
+                data.append(stats_table[n].split())
+                n+=1
+
+        # Store the stats table as a pandas dataframe and remove last 5 rows (are empty or contain punctuation)
+            df = pd.DataFrame(data,columns=['Resolution', 'dash', 'Resolution High',
+                                    '#Data','#Theory','%Complete', 'Redundancy',
+                                    'Mean I','Mean I/s','R(int)','Rsigma'],dtype=float)
+            df.drop(df.tail(5).index,inplace=True)
+            self.df = df
+
+    def graph_table(self):
+        if self.x is None and self.y is None:
+            pass
+        else:
+            x = self.df['Resolution High']
+            y1 = self.df['R(int)']
+            y2 = self.df['Rsigma']
+            y3 = self.df['%Complete']
+            y4 = self.df['Mean I/s']
+
+            #Graph the following using matplotlib and numpy
+            grid = plt.GridSpec(2, 2, wspace=0.2, hspace=0.3)
+  
+            plt.subplot(grid[0,0])
+            plt.title('Resolution vs R(int)')
+            plt.plot(x, y1, '-',color='m')
+            plt.xlabel('Resolution')
+            plt.ylabel('R(int)')
+            plt.gca().invert_xaxis()
+
+            plt.subplot(grid[0,1])
+            plt.title('Resolution vs Rsigma')
+            plt.plot(x, y2, '-',color='r')
+            plt.xlabel('Resolution')
+            plt.ylabel('Rsigma')
+            plt.gca().invert_xaxis()
+    
+            plt.subplot(grid[1,0])
+            plt.title('Resolution vs Completeness')
+            plt.plot(x, y3, '-',color='g')
+            plt.xlabel('Resolution')
+            plt.ylabel('Completeness (%)')
+            plt.gca().invert_xaxis()
+
+            plt.subplot(grid[1,1])
+            plt.title('Resolution vs Mean I/s')
+            plt.plot(x, y4, '-',color='b')
+            plt.xlabel('Resolution')
+            plt.ylabel('Mean I/s')
+            plt.gca().invert_xaxis()
+
+            plt.subplots_adjust(bottom=0.1,right=2,top=2)
+
+            # Save the .png graph file into the current directory
+            if len(sys.argv) == 1:
+                plt.savefig('XDS_ASCII.png',bbox_inches='tight',pad_inches=0.1)
+                self.logger.info('open file using: eog XDS_ASCII.png')
+            else:
+                name = os.path.join(os.getcwd(),sys.argv[1].split(".")[0]+'.png')
+                plt.savefig(name,bbox_inches='tight',pad_inches=0.1)
+                self.logger.info(f'open file using: eog {name}')
+    def run(self):
+        self.extract_table()
+        self.graph_table()
+
+if __name__=='__main__':
+    x = Xprep_graphs()
+    x.run()
