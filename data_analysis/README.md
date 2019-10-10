@@ -1,4 +1,5 @@
 Data Analysis modules go here
 
-Xprep Graphs (Kate)
-Unit cell analysis (AmY)
+Xprep Graphs for a single dataset (Kate)
+
+Unit Cell Analysis (Amy)
