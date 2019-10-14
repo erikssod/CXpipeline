@@ -1,4 +1,4 @@
-#!/bin/env python3.7
+#!/usr/bin/env python3.7
 
 #------------------------------------------------------------------
 # This program reads in Xprep .prp files (e.g. XDS_ASCII.prp)
@@ -29,8 +29,13 @@ class Xprep_graphs():
                 self.logger.warning('No .prp file provided, no XDS_ASCII.prp file in directory. ABORTING')
                 print("XPREP PRP statistics file to PNG graph\n"
                        "Usage:\n"
-                       "   ./XprepGraphs filename.prp       -- if python3.7 is in /bin/env\n"
-                       "   python3 XprepGraphs filename.prp -- if python3 in your path")
+                       "   ./XprepGraphs filename.prp                 -- if python3.7 is in /usr/bin/env\n"
+                       "   ./XprepGraphs filename.prp -o              -- write png to current directory\n"
+                       "   ./XprepGraphs filename.prp -o /path/       -- write png to specified path\n"
+                       "Alternative usage:\n"
+                       "   python3 XprepGraphs filename.prp           -- if python3 in your path\n"
+                       "   python3 XprepGraphs filename.prp -     o   -- write png to current directory\n"
+                       "   python3 XprepGraphs filename.prp -o /path/ -- write png to specified path")
                 self.x = None
                 self.y = None
                 pass
@@ -114,14 +119,22 @@ class Xprep_graphs():
             if len(sys.argv) == 1:
                 plt.savefig('XDS_ASCII.png',bbox_inches='tight',pad_inches=0.1)
                 self.logger.info('open file using: eog XDS_ASCII.png')
+            elif len(sys.argv) == 3:
+                name = os.path.join(os.path.basename(sys.argv[1]).split('.prp')[0]+'.png')
+                plt.savefig(os.path.join(os.getcwd(),name),bbox_inches='tight',pad_inches=0.1)
+                self.logger.info(f'Image file saved as {name}')
+            elif len(sys.argv) == 4:
+                name = os.path.join(os.path.basename(sys.argv[1]).split('.prp')[0]+'.png')
+                plt.savefig(os.path.join(sys.argv[3],name),bbox_inches='tight',pad_inches=0.1)
+                self.logger.info(f'Image file saved as {name}')
             else:
                 name = os.path.join(sys.argv[1].split(".prp")[0]+".png")
                 plt.savefig(name,bbox_inches='tight',pad_inches=0.1)
                 self.logger.info(f'Image file saved as {name}')
+
     def run(self):
         self.extract_table()
         self.graph_table()
-
 if __name__=='__main__':
     x = Xprep_graphs()
     x.run()
