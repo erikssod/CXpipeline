@@ -1,4 +1,4 @@
-#!/bin/env python3.7
+#!/bin/env python3.6
 
 #------------------------------------------------------------------
 # This program reads in Xprep .prp files (e.g. XDS_ASCII.prp)
@@ -36,21 +36,21 @@ class Xprep_graphs():
                 self.logger.info('No .prp file provided, using XDS_ASCII.prp as default')
                 with open('XDS_ASCII.prp') as myfile:
                     self.contents = myfile.read()
-		search_table()
+                self.search_table()
                # self.x = re.search(" Inf",self.contents)  
                # self.y = re.search("Merged",self.contents)
         else:
             with open(sys.argv[1], 'rt') as myfile:
                 self.contents = myfile.read()
             self.logger.info(f'{sys.argv[1]} file provided was successfully read into the program')
-	    search_table()
+            self.search_table()
             #self.x = re.search(" Inf",self.contents)
             #self.y = re.search("Merged",self.contents)
 
-     def search_table(self):
-         #Search file for beginning and ending of stats table
-         self.x = re.search(" Inf",contents)
-         self.y = re.search("Merged",contents)
+    def search_table(self):
+        #Search file for beginning and ending of stats table
+        self.x = re.search(" Inf",self.contents)
+        self.y = re.search("Merged",self.contents)
 
     def extract_table(self):
         if self.x is None and self.y is None:
@@ -84,7 +84,7 @@ class Xprep_graphs():
 
             #Graph the following using matplotlib and numpy
             grid = plt.GridSpec(2, 2, wspace=0.2, hspace=0.3)
-  
+
             plt.subplot(grid[0,0])
             plt.title('Resolution vs R(int)')
             plt.plot(x, y1, '-',color='m')
@@ -98,7 +98,7 @@ class Xprep_graphs():
             plt.xlabel('Resolution')
             plt.ylabel('Rsigma')
             plt.gca().invert_xaxis()
-    
+
             plt.subplot(grid[1,0])
             plt.title('Resolution vs Completeness')
             plt.plot(x, y3, '-',color='g')
@@ -120,9 +120,10 @@ class Xprep_graphs():
                 plt.savefig('XDS_ASCII.png',bbox_inches='tight',pad_inches=0.1)
                 self.logger.info('open file using: eog XDS_ASCII.png')
             else:
-                name = os.path.join(os.getcwd(),sys.argv[1].split(".")[0]+'.png')
+                name = os.path.join(sys.argv[1].split(".prp")[0]+".png")
+               # name = os.path.join(sys.argv[1].split(".")[0]+'.png')
                 plt.savefig(name,bbox_inches='tight',pad_inches=0.1)
-                self.logger.info(f'open file using: eog {name}')
+                self.logger.info(f'open image file {name}')
     def run(self):
         self.extract_table()
         self.graph_table()
