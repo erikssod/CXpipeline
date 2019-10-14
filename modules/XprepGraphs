@@ -12,9 +12,7 @@
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-import os
-import re
-import sys
+import os, sys, re
 from sys import stdout
 import pandas as pd
 import numpy as np
@@ -28,7 +26,11 @@ class Xprep_graphs():
 
         if len(sys.argv) < 2:
             if os.path.isfile('XDS_ASCII.prp') is False:
-                self.logger.warning('No .prp file provided, no XDS_ASCII.prp file in directory. Aborting')
+                self.logger.warning('No .prp file provided, no XDS_ASCII.prp file in directory. ABORTING')
+                print("XPREP PRP statistics file to PNG graph\n"
+                       "Usage:\n"
+                       "   ./XprepGraphs filename.prp       -- if python3.7 is in /bin/env\n"
+                       "   python3 XprepGraphs filename.prp -- if python3 in your path")
                 self.x = None
                 self.y = None
                 pass
@@ -37,18 +39,13 @@ class Xprep_graphs():
                 with open('XDS_ASCII.prp') as myfile:
                     self.contents = myfile.read()
                 self.search_table()
-               # self.x = re.search(" Inf",self.contents)  
-               # self.y = re.search("Merged",self.contents)
         else:
             with open(sys.argv[1], 'rt') as myfile:
                 self.contents = myfile.read()
             self.logger.info(f'{sys.argv[1]} file provided was successfully read into the program')
             self.search_table()
-            #self.x = re.search(" Inf",self.contents)
-            #self.y = re.search("Merged",self.contents)
 
     def search_table(self):
-        #Search file for beginning and ending of stats table
         self.x = re.search(" Inf",self.contents)
         self.y = re.search("Merged",self.contents)
 
@@ -59,11 +56,9 @@ class Xprep_graphs():
             stats_table = self.contents[self.x.start():self.y.start()].split('\n')
 
         # Split the rows of the stats table into individual elements
-            n = 0
             data = []
-            for item in stats_table:
-                data.append(stats_table[n].split())
-                n+=1
+            for item,value in enumerate(stats_table):
+                data.append(value.split())
 
         # Store the stats table as a pandas dataframe and remove last 5 rows (are empty or contain punctuation)
             df = pd.DataFrame(data,columns=['Resolution', 'dash', 'Resolution High',
@@ -115,15 +110,14 @@ class Xprep_graphs():
 
             plt.subplots_adjust(bottom=0.1,right=2,top=2)
 
-            # Save the .png graph file into the current directory
+            # Save the .png graph file into the .prp directory
             if len(sys.argv) == 1:
                 plt.savefig('XDS_ASCII.png',bbox_inches='tight',pad_inches=0.1)
                 self.logger.info('open file using: eog XDS_ASCII.png')
             else:
                 name = os.path.join(sys.argv[1].split(".prp")[0]+".png")
-               # name = os.path.join(sys.argv[1].split(".")[0]+'.png')
                 plt.savefig(name,bbox_inches='tight',pad_inches=0.1)
-                self.logger.info(f'open image file {name}')
+                self.logger.info(f'Image file saved as {name}')
     def run(self):
         self.extract_table()
         self.graph_table()
