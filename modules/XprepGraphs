@@ -1,4 +1,4 @@
-#!/bin/env python3.6
+#!/bin/env python3.7
 
 #------------------------------------------------------------------
 # This program reads in Xprep .prp files (e.g. XDS_ASCII.prp)
