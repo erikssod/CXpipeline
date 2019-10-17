@@ -1,0 +1,78 @@
+cell_parameters: ["_cell_length_a", "_cell_length_b", "_cell_length_c", "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma", "_cell_volume", "_diffrn_reflns_av_R_equivalents", "_diffrn_measured_fraction_theta_full","_diffrn_ambient_temperature"]
+
+
+neggia_library: '/usr/local/bin/XDS_Tools/dectris-neggia.so'
+
+beamline: 'MX1'
+
+reference_path: '/home/amy/Documents/analysis/Andres/S19ar19_100_0394_20191005-052944_process/ref.ins'
+
+reference_name: 'ref.ins'
+
+file_name: 'S19ar19'
+
+MX1_data_collection: 'AS QEGUI'
+MX1_absorp_correction: 'SADABS'
+MX1_radiation_type: 'synchrotron'
+MX1_measurement_method: 'Omega Scan'
+MX1_cell_refinement: 'XDS (Kabsch, 1993)'
+MX1_structure_soln: 'known structure'
+MX1_monochromator: 'Silicon Double Crystal'
+MX1_source: 'MX1 Beamline Australian Synchrotron'
+MX1_detector: 'Dectris Eiger X 9M'
+
+MX2_data_collection: 'AS QEGUI'
+MX2_absorp_correction: 'none'
+MX2_radiation_type: 'synchrotron'
+MX2_measurement_method: 'Omega Scan'
+MX2_cell_refinement: 'XDS (Kabsch, 1993)'
+MX2_structure_soln: 'known structure'
+MX2_monochromator: 'Silicon Double Crystal'
+MX2_source: 'MX2 Beamline Australian Synchrotron'
+MX2_detector: 'Dectris Eiger X 16M'
+
+space_group_number: '2'
+
+space_group: 'P-1'
+
+temp: '100(2)'
+
+chemical_formula: 'C37 H29 N5 O4 Fe Br'
+
+crystal_habit: 'plate'
+
+crystal_colour: 'red'
+
+max_crystal_dimension: '0.01'
+
+middle_crystal_dimension: '0.01'
+
+min_crystal_dimension: '0.005'
+
+wavelength: '0.71075552702'
+
+experiment_type: 'variable temperature'
+
+reference_provided: 'yes'
+
+#one_reference_provided: 'yes'
+
+#two_reference_provided: 'no'
+
+#high_temp_ref_path: '/ref/high.ins'
+
+#low_temp_ref_path: '/ref/low.ins'
+
+#XDS_background_files: ['/GAIN.cbf', '/BKGINIT.cbf', '/BLANK', '/X-CORRECTIONS.cbf', '/Y-CORRECTIONS.cbf']
+
+#xprep_starting_name: 'XDS_ASCII.HKL_p1'
+
+#experiment_type: 'flexible mapping'
+
+#experiment_type: 'variable temperature two references'
+
+
+
+
+
+
