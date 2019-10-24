@@ -7,7 +7,9 @@ Unit Cell Analysis (Amy)
 Amy:
 vt_analysis_no_symmetry_change.py allows for full analysis using the synchrotron's automatic processing 
 
-Am also working on a version of this script for systems with unknown symmetry (might have phase changes), as well as a version where two references can be used if the system is known to go through two different symmetries
+vt_analysis_unknown_changes.py does not assume any symmetry and goes through xprep/shelxt/shelxl automatically with cell analysis/output - should always be checked and not heavily relied on, but might provide a useful indication as to how the system is behaving for preliminary feedback 
+
+Am also working on a version where two references can be used if the system is known to go through two different symmetries
 
 A script for flexible analysis is still in the works :) 
 

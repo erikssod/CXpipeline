@@ -27,6 +27,8 @@ class XPREP:
         self.reference = self.cfg['reference_provided']
         self.formula = self.cfg['chemical_formula']
         self.space_group = self.cfg['space_group']
+        if self.cfg['second_space_group'] != '':
+            self.second_space_group = self.cfg['second_space_group']
                 
     #A procedure to accept whatever xprep thinks - equivalent to a person sitting there and just pressing enter for everything    
   

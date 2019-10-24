@@ -7,7 +7,13 @@ beamline: 'MX1'
 
 reference_path: '/home/amy/Documents/analysis/Andres/S19ar19_100_0394_20191005-052944_process/ref.ins'
 
+second_reference_path: '/home/amy/Documents/analysis/Andres/S19ar19_350_0409_20191005-063520_process/ref2.ins'
+
+#if no second reference - second_reference_path: '' 
+
 reference_name: 'ref.ins'
+
+second_reference_name: 'ref2.ins'
 
 file_name: 'S19ar19'
 
@@ -34,6 +40,10 @@ MX2_detector: 'Dectris Eiger X 16M'
 space_group_number: '2'
 
 space_group: 'P-1'
+
+second_space_group: 'P-1'
+
+#if no second space group - second_space_group: '' 
 
 temp: '100(2)'
 

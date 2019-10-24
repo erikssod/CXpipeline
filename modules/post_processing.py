@@ -226,9 +226,7 @@ class CIF_File():
 def solve_SHELXT():
     shelxt = subprocess.call(['shelxt', 'shelx'])
     os.remove('shelx.ins')
-    os.rename('shelx_a.ins', 'shelx.ins')
-    structure_INS.add_line('ACTA')
-    structure_INS.add_line('WGHT      0.2000      0.1000')
+    os.rename('shelx_a.res', 'shelx.ins')
 
 
 #A function to refine using SHELXL and adjusting the weighting scheme each time
@@ -244,8 +242,18 @@ def refine_SHELXL():
                     weight.append(line)
         with open ('shelx.ins', 'rt') as initial:
             lines = initial.readlines()
+        
+        ACTA_flag = 0
+        
+        for line in lines:
+            if 'ACTA' in line:
+                ACTA_flag += 1
+                
         with open ('shelx.ins', 'w') as initial:
             for line in lines:
+                if 'FMAP' in line and ACTA_flag == 0:
+                    initial.write('ACTA \n') 
+                    initial.write(line)
                 if 'WGHT' in line:
                     initial.write(weight[1])
                 else:
