@@ -37,50 +37,83 @@ class Setup():
     #Will mostly be for flexible crystals
     
     def Organise_Directory_Reprocessing(self):
+        if not os.path.exists(self.cfg['file_name'] + '_' + self.cfg['experiment_type'] + '_analysis') and not os.path.exists('analysis'): 
         
-        #This form is used where data reprocessing may be required (ie flexible mapping)
-        
-        #Will need to provide all frames and reference files into a single folder
-
-        tree_structure = ['analysis', 'ref', 'input', 'results', 'frames']
-        
-        if not os.path.exists('analysis'):
+            os.mkdir(self.cfg['file_name'] + '_' + self.cfg['experiment_type'] + '_analysis')
+            
+            #User defines where they have their reference (assuming while at the synchrotron they did one up)
+            #So before change all of the folders to make neat and tidy, first need to copy the reference from that location
+            
+            os.chdir(self.cfg['file_name'] + '_' + self.cfg['experiment_type'] + '_analysis')
+            
+            tree_structure = ['analysis', 'ref', 'results', 'frames']
+            
             for item in tree_structure:
                 os.mkdir(item)
-            
-            for files in os.listdir(self.home_path):
-                if files.endswith('master.h5'):
-                    b = files.replace('_master.h5', '')
-                    os.mkdir('analysis/' + b)
-            
-            os.chdir('analysis')
-            
-            for folder in os.listdir():
-                os.symlink(self.home_path + '/frames', folder + '/img')
-                for bkg_file in self.cfg['XDS_background_files']:
-                    if bkg_file in os.listdir(self.home_path):
-                        shutil.copy(self.home_path + bkg_file, folder)
-                
-                
-                #if self.cfg['experiment_type'] == 'flexible mapping':
-                
-                    #shutil.copy(self.home_path + '/GAIN.cbf', folder)
-                    #shutil.copy(self.home_path + '/BKGINIT.cbf', folder)
-                    #shutil.copy(self.home_path + '/BLANK.cbf', folder)
-                    #shutil.copy(self.home_path + '/X-CORRECTIONS.cbf', folder)
-                    #shutil.copy(self.home_path + '/Y-CORRECTIONS.cbf', folder)
                 
             os.chdir('..')
             
-            for files in os.listdir(self.home_path):
-                if files.endswith(('.cbf', '.ins', '.XDS')):
-                    shutil.move(self.home_path + '/' + files, self.home_path + '/ref/' + files)
-                elif files.endswith('.INP'):
-                    shutil.move(self.home_path + '/' + files, self.home_path + '/input/' + files)
-                elif files.endswith('.h5'):
-                    shutil.move(self.home_path + '/' + files, self.home_path + '/frames/' + files)
+            try:
+                shutil.copy(self.cfg['reference_path'], self.cfg['file_name'] + '_' + self.cfg['experiment_type'] + '_analysis/ref')
+            except FileNotFoundError as error:
+                self.logger.info(f'Failed to find reference file with error {error}')
+                
+            try:
+                shutil.copy(self.cfg['xds_reference_path'], self.cfg['file_name'] + '_' + self.cfg['experiment_type'] + '_analysis/ref')
+            except FileNotFoundError as error:
+                self.logger.critical(f'Failed to find reference XDS.INP with error {error}')
+                exit()
+                
+            try:
+                shutil.copy(self.cfg['instrument_parameters_path'], self.cfg['file_name'] + '_' + self.cfg['experiment_type'] + '_analysis/ref')
+            except FileNotFoundError as error:
+                self.logger.info(f'Failed to find instrument parameters with error {error}')
+            
+            for item in os.listdir():
+                if self.cfg['file_name'] in item:
+                    if 'analysis' not in item:
+                        shutil.move(item, self.cfg['file_name'] + '_' + self.cfg['experiment_type'] + '_analysis/frames/' + item)
+                        
+            os.chdir(self.cfg['file_name'] + '_' + self.cfg['experiment_type'] + '_analysis')
+            
+            self.home_path = os.getcwd()
+            shutil.move(self.original_path + '/error_output.txt', self.home_path + '/error_output.txt')
+            
+            os.chdir('frames')
+            
+            for run in os.listdir():
+                if os.path.isdir(run):
+                    os.chdir(run)
+                    for files in os.listdir():
+                        if files.endswith('master.h5'):
+                            b = files.replace('_master.h5', '')
+                            os.mkdir(self.home_path + '/analysis/' + b)
+                            shutil.move(self.home_path + '/frames/' + run + '/' + files, self.home_path + '/frames/' + files)
+                        elif files.endswith('.h5'):
+                            shutil.move(self.home_path + '/frames/' + run + '/' + files, self.home_path + '/frames/' + files)
+                    os.chdir('..')
+                    shutil.rmtree(run)
+                else:
+                    if item.endswith('master.h5'):
+                        b = item.replace('_master.h5', '')
+                        os.mkdir(self.home_path + '/analysis/' + b)
+                    elif files.endswith('.h5'):
+                        shutil.move(self.home_path + '/frames/' + run + '/' + files, self.home_path + '/frames/' + files)
+                            
+            os.chdir(self.home_path + '/analysis')
+            
+            bkg_files = ['/GAIN.cbf', '/BKGINIT.cbf', '/BLANK.cbf', '/X-CORRECTIONS.cbf', '/Y-CORRECTIONS.cbf']
+            for folder in os.listdir():
+                os.symlink(self.home_path + '/frames', folder + '/img')
+                for item in bkg_files:
+                    shutil.copy(self.cfg['background_files_reference_path'] + item, self.home_path + '/ref' + item)
+                    shutil.copy(self.home_path + '/ref' + item, folder)
                     
-        #Setting up folders to distinguish - this number goes up by 1 every time the entire code is run (to keep everything organised)
+            os.chdir('..')
+                    
+        if self.cfg['file_name'] + '_' + self.cfg['experiment_type'] + '_analysis' not in self.home_path:
+            os.chdir(self.cfg['file_name'] + '_' + self.cfg['experiment_type'] + '_analysis')
+            self.home_path = os.getcwd()
             
         os.chdir(self.home_path + '/results/')
         tmp = os.listdir()
@@ -88,17 +121,21 @@ class Setup():
         for item in tmp:
             tmp2.append(int(item))
         tmp2.sort()
-
+        
         try:
-            new_folder = int(tmp2[-1]) + 1
-            
+            self.new_folder = int(tmp2[-1]) + 1
+    
         except IndexError:
-            new_folder = 1    
-                
-        os.mkdir(self.home_path + '/results/' + str(new_folder))
+            self.new_folder = 1
+            
+        os.mkdir(self.home_path + '/results/' + str(self.new_folder))
         os.chdir(self.home_path)
         
-        return new_folder
+        try:
+            shutil.move(self.original_path + '/error_output.txt', self.home_path + '/error_output.txt')
+        except FileNotFoundError:
+            pass
+
     
     #This one is for VT - or dealing with any quick analysis from the synchrotron's autoprocessed data
     
@@ -195,6 +232,8 @@ class Setup():
             if self.cfg['file_name'] + '_' + self.cfg['experiment_type'] + '_analysis' not in self.home_path:
                 os.chdir(self.cfg['file_name'] + '_' + self.cfg['experiment_type'] + '_analysis')
                 self.home_path = os.getcwd()
+                
+
 
 
     

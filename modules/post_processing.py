@@ -8,14 +8,10 @@
 import os 
 import shutil
 import subprocess
-#import pandas as pd
 import math
 import fileinput
 import re
 from CifFile import ReadCif
-#import matplotlib.pyplot as plt
-#import matplotlib.ticker as ticker
-#import logging
 import yaml
 import logbook
 import sys 
@@ -68,11 +64,6 @@ class INS_File:
         self.gamma = float(split_line[7])
         self.volume = self.a * self.b * self.c * math.sqrt(1 - (math.cos(self.alpha * (math.pi / 180)) ** 2) - (math.cos(self.beta * (math.pi / 180)) ** 2) - (math.cos(self.gamma * (math.pi / 180)) ** 2) + (2 * math.cos(self.alpha * (math.pi / 180)) * math.cos(self.beta * (math.pi / 180)) * math.cos(self.gamma * (math.pi / 180))))
         
-        try:
-            self.add_line('ACTA')
-        except:
-            self.logger.critical('Failed to add ACTA command to .ins')
-            exit()
     
     def add_line(self, parameter):
         with open (self.path, 'rt') as ins_file:
@@ -148,6 +139,7 @@ class CIF_File():
                 exit()
         
         self.path = path_to_self
+        self.wavelength = self.cfg['wavelength']
         
     def Datablock_Naming(self,counter):
         with open (self.path, 'rt') as cif:
@@ -185,7 +177,7 @@ class CIF_File():
             data_block['_chemical_formula_moiety'] = self.cfg['chemical_formula']
             data_block['_computing_data_collection'] = self.cfg[beamline +'_data_collection']
             data_block['_exptl_absorp_correction_type'] = self.cfg[beamline +'_absorp_correction']
-            data_block['_diffrn_radiation_wavelength'] = self.cfg['wavelength']
+            data_block['_diffrn_radiation_wavelength'] = self.wavelength
             data_block['_diffrn_radiation_type'] = self.cfg[beamline +'_radiation_type']
             data_block['_diffrn_source'] = self.cfg[beamline +'_radiation_type']
             data_block['_diffrn_measurement_device_type'] = self.cfg[beamline +'_detector']
@@ -249,15 +241,17 @@ def refine_SHELXL():
             if 'ACTA' in line:
                 ACTA_flag += 1
                 
-        with open ('shelx.ins', 'w') as initial:
-            for line in lines:
-                if 'FMAP' in line and ACTA_flag == 0:
-                    initial.write('ACTA \n') 
-                    initial.write(line)
-                if 'WGHT' in line:
-                    initial.write(weight[1])
-                else:
-                    initial.write(line)
+        if ACTA_flag == 0:
+                
+            with open ('shelx.ins', 'w') as initial:
+                for line in lines:
+                    if 'FMAP' in line:
+                        initial.write('ACTA \n') 
+                        initial.write(line)
+                    if 'WGHT' in line:
+                        initial.write(weight[1])
+                    else:
+                        initial.write(line)
 
  
 

@@ -11,7 +11,7 @@ import os
  
  
 class XPREP:
-    def __init__(self, home_path, structure_number = 1):
+    def __init__(self, home_path):
         logbook.FileHandler(home_path + '/error_output.txt', 'a').push_application()  
         self.logger = logbook.Logger(self.__class__.__name__)
         logbook.set_datetime_format("local")
@@ -24,7 +24,7 @@ class XPREP:
                 self.logger.critical(f'Failed to open config file with {error}')
                 exit()
                 
-        self.reference = self.cfg['reference_provided']
+        #self.reference = self.cfg['reference_provided']
         self.formula = self.cfg['chemical_formula']
         self.space_group = self.cfg['space_group']
         if self.cfg['second_space_group'] != '':
@@ -67,6 +67,36 @@ class XPREP:
     def run_XPREP_known(self):
         xprep = subprocess.Popen(['xprep'], stdin = subprocess.PIPE, encoding='utf8')
         xprep.stdin.write('XDS_ASCII.HKL_p1\n')
+        xprep.stdin.write('X\n')
+        xprep.stdin.write('Y\n')
+        xprep.stdin.write('P\n')
+        xprep.stdin.write('U\n')
+        xprep.stdin.write('O\n')
+        xprep.stdin.write('1 0 0 0 1 0 0 0 1\n')
+        xprep.stdin.write('S\n')
+        xprep.stdin.write('I\n')
+        xprep.stdin.write(self.space_group + '\n')
+        xprep.stdin.write('Y\n')
+        xprep.stdin.write('D\n')
+        xprep.stdin.write('S\n')
+        xprep.stdin.write('A\n')
+        xprep.stdin.write('\n')
+        xprep.stdin.write('E\n')
+        xprep.stdin.write('C\n')
+        xprep.stdin.write(self.formula + '\n')
+        xprep.stdin.write('E\n')
+        xprep.stdin.write('F\n')
+        xprep.stdin.write('shelx\n')
+        xprep.stdin.write('S\n')
+        xprep.stdin.write('Y\n')
+        xprep.stdin.write('\n')
+        xprep.stdin.write('Q\n')
+        xprep.stdin.close()
+        xprep.wait()
+        
+    def run_XPREP_known_reprocessed(self):
+        xprep = subprocess.Popen(['xprep'], stdin = subprocess.PIPE, encoding='utf8')
+        xprep.stdin.write('XDS_ASCII.HKL\n')
         xprep.stdin.write('X\n')
         xprep.stdin.write('Y\n')
         xprep.stdin.write('P\n')
