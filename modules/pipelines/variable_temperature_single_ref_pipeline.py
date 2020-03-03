@@ -10,7 +10,7 @@
 
 #----------Instructions for Use----------#
 
-#This module acts as the overall pipeline for flexible crystal analysis 
+#This module acts as the overall pipeline for variable temperature analysis
 
 #----------Required Modules----------#
 
