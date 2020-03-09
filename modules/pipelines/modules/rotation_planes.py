@@ -134,7 +134,17 @@ class Rotation_Planes:
                 
             return angle    
         
-    def rotation_planes(self):
+    def rotation_planes(self, path = 'temp'):
+        
+        #Helps independence
+        
+        if path == 'temp':
+            analysis = self.cfg['analysis_path']
+            results = self.cfg['current_results_path']
+        else:
+            analysis = path
+            results = path
+        
         
         #Cycles through and calcualtes the rotation planes 
         
@@ -149,7 +159,7 @@ class Rotation_Planes:
                             #Make new data frame each time and append to previous file 
                             
                             self.df = pd.DataFrame({'Test Number': self.cfg['process_counter'], 'Structure':[index + 1], 'Distance':[(index + 1) * int(self.cfg['mapping_step_size'])], 'Rotation Angle': [rot_angle]}) 
-                            os.chdir(self.cfg['current_results_path'])
+                            os.chdir(results)
                             try:
                                 old_data = pd.read_csv('rotation_angles.csv')
                             except FileNotFoundError:
@@ -158,9 +168,9 @@ class Rotation_Planes:
                                 new_df = old_data.append(self.df)
                                 new_df.to_csv('rotation_angles.csv', index = None)
                                 
-                    os.chdir(self.cfg['analysis_path'])
-                            
-        os.chdir(self.cfg['current_results_path'])
+                    os.chdir(analysis)
+                        
+        os.chdir(results)
         
         full_data = pd.read_csv('rotation_angles.csv')
         
@@ -198,4 +208,4 @@ class Rotation_Planes:
 
 if __name__ == "__main__":
     analysis = Rotation_Planes(os.getcwd())
-    analysis.rotation_planes()
+    analysis.rotation_planes(os.getcwd())
