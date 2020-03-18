@@ -65,6 +65,7 @@ second_space_group: ''
 space_group: temp
 space_group_number: 1
 temp: 100(2)
+temps_already_in_cifs: 'no'
 use_cif_headings: 'yes'
 user_headings_x: temp
 user_headings_y: [A-axis, B-axis, C-axis, alpha, beta, gamma, vol]

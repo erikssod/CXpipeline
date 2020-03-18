@@ -156,6 +156,8 @@ class VT_Setup():
 
         self.cfg['ref_INS_volume'] = self.cfg['ref_INS_a'] * self.cfg['ref_INS_b'] * self.cfg['ref_INS_c'] * math.sqrt(1 - (math.cos(self.cfg['ref_INS_alpha'] * (math.pi / 180)) ** 2) - (math.cos(self.cfg['ref_INS_beta'] * (math.pi / 180)) ** 2) - (math.cos(self.cfg['ref_INS_gamma'] * (math.pi / 180)) ** 2) + (2 * math.cos(self.cfg['ref_INS_alpha'] * (math.pi / 180)) * math.cos(self.cfg['ref_INS_beta'] * (math.pi / 180)) * math.cos(self.cfg['ref_INS_gamma'] * (math.pi / 180)))) 
         
+        self.cfg['temps_already_in_cifs'] = 'no'
+        
         with open (self.conf_path, 'w') as f:
             yaml.dump(self.cfg, f)
                   

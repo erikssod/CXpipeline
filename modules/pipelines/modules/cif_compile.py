@@ -46,8 +46,10 @@ class CIF_Combine:
             except yaml.YAMLERROR as error:
                 self.logger.critical(f'Failed to open config file with {error}')
                 exit()
-                
-        if location == 'temp':
+        
+        self.location = location
+        
+        if self.location == 'temp':
             os.chdir(self.cfg['analysis_path'])
     
     def sorted_properly(self, data):
@@ -68,7 +70,11 @@ class CIF_Combine:
             lines = cif.readlines()
         for line in lines:
             if 'data_' + pathlib.Path(file_name).stem in line:
-                name.append(line.strip('\n').strip(pathlib.Path(file_name).stem) + str(index + 1))
+                
+                name.append(line.split('_')[0] + '_' + str(index + 1))
+                
+                #name.append(line.strip('\n').strip(pathlib.Path(file_name).stem) + str(index + 1))
+
         with open (file_name, 'w') as cif:
             for line in lines:
                 if 'data_' + pathlib.Path(file_name).stem in line:
@@ -109,14 +115,14 @@ class CIF_Combine:
                 data_block['_diffrn_radiation_monochromator'] = self.cfg[beamline +'_monochromator']
                 data_block['_diffrn_radiation_source'] = self.cfg[beamline +'_source']
             
-            data_block['_chemical_formula_moiety'] = self.cfg['chemical_formula']
-            data_block['_exptl_crystal_colour'] = self.cfg['crystal_colour']
-            data_block['_exptl_crystal_description'] = self.cfg['crystal_habit']
-            data_block['_cell_measurement_temperature'] = self.cfg['temp']
-            data_block['_diffrn_ambient_temperature'] = self.cfg['temp']
-            data_block['_exptl_crystal_size_max'] = self.cfg['max_crystal_dimension']
-            data_block['_exptl_crystal_size_mid'] = self.cfg['middle_crystal_dimension']
-            data_block['_exptl_crystal_size_min'] = self.cfg['min_crystal_dimension']
+            #data_block['_chemical_formula_moiety'] = self.cfg['chemical_formula']
+            #data_block['_exptl_crystal_colour'] = self.cfg['crystal_colour']
+            #data_block['_exptl_crystal_description'] = self.cfg['crystal_habit']
+            #data_block['_cell_measurement_temperature'] = self.cfg['temp']
+            #data_block['_diffrn_ambient_temperature'] = self.cfg['temp']
+            #data_block['_exptl_crystal_size_max'] = self.cfg['max_crystal_dimension']
+            #data_block['_exptl_crystal_size_mid'] = self.cfg['middle_crystal_dimension']
+            #data_block['_exptl_crystal_size_min'] = self.cfg['min_crystal_dimension']
             data_block['_cell_measurement_reflns_used'] = self.C
             data_block['_cell_measurement_theta_min'] = self.A
             data_block['_cell_measurement_theta_max'] = self.B
@@ -137,12 +143,21 @@ class CIF_Combine:
                     if item.endswith('.cif') and 'autoprocess' not in item:
                         self.datablock_naming(item,index)
                         self.finalise_parameters(item, index)
-                        with open (os.path.join(self.cfg['current_results_path'], str(self.cfg['process_counter']) + '_all_cifs.cif'), 'a') as combined_cif:
-                            try:
-                                with open (item) as single_cif:
-                                    combined_cif.write(single_cif.read())
-                            except FileNotFoundError as error:
-                                self.logger.info('Stuff messed up :(')
+                        
+                        if self.location == 'temp':
+                            with open (os.path.join(self.cfg['current_results_path'], str(self.cfg['process_counter']) + '_all_cifs.cif'), 'a') as combined_cif:
+                                try:
+                                    with open (item) as single_cif:
+                                        combined_cif.write(single_cif.read())
+                                except FileNotFoundError as error:
+                                    self.logger.info('Stuff messed up :(')
+                        else:
+                            with open (os.path.join(self.location, 'all_cifs.cif'), 'a') as combined_cif:
+                                try:
+                                    with open (item) as single_cif:
+                                        combined_cif.write(single_cif.read())
+                                except FileNotFoundError as error:
+                                    self.logger.info('Stuff messed up :(')
                 os.chdir('..')
     
 #If the module is run independently, the class is initialised,and the cifs are compiled 

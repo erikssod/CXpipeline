@@ -153,15 +153,16 @@ class VT_Analysis:
       
     def analysis(self):
         
-        #Imports the temperatures from the autoprocess cifs into the dataframe 
-       
-        temp_df = pd.read_csv(os.path.join(self.cfg['results_path'], 'Just_Temps.csv'))
-    
-        self.df['_diffrn_ambient_temperature'] = temp_df['_diffrn_ambient_temperature']
-        self.df['_diffrn_ambient_temperature_error'] = temp_df['_diffrn_ambient_temperature_error']
+        #Imports the temperatures from the autoprocess cifs into the dataframe if required 
         
-        self.df.to_csv('CIF_Parameters.csv', index = None)
-
+        if self.cfg['temps_already_in_cifs'] == 'no':
+       
+            temp_df = pd.read_csv(os.path.join(self.cfg['results_path'], 'Just_Temps.csv'))
+        
+            self.df['_diffrn_ambient_temperature'] = temp_df['_diffrn_ambient_temperature']
+            self.df['_diffrn_ambient_temperature_error'] = temp_df['_diffrn_ambient_temperature_error']
+            
+            self.df.to_csv('CIF_Parameters.csv', index = None)
        
        #Remove duplicates to define search condition to separate dataframes by their behaviour - this allows for the output graphs to be colour-coded 
     

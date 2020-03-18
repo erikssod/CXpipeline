@@ -134,6 +134,7 @@ None
 * ref_INS_beta - The beta angle from the reference '.ins' file
 * ref_INS_gamma - The gamma angle from the reference '.ins' file
 * ref_INS_volume - The volume calculated based on the cell in the reference '.ins' file 
+* temps_already_in_cifs - As the full pipeline is being used, this parameter sets up the temperatures to be found from the autoprocess.cif files 
 
 ### modules/xds.py
 
@@ -245,8 +246,75 @@ This module performs a basic analysis for a variable temperature experiment - al
 * user_headings_x - If you are using your own headings, type the name of the column which has your temperature data in it
 * user_headings_y - If you are using your own headings, type the name of all columns which have your cell data in it 
 * data_file_name - If you are using your own data, you will need to change this to the name of your '.csv' file. If you are using the full pipeline, use the default 'CIF_Parameters.csv' 
+* temps_already_in_cifs - If your temperature values are already in the cif files, set this parameter to 'yes', otherwise, set as 'no' (if being used as a part of the pipeline, the system will automatically set this to 'no')
 
 **conf.yaml parameters used by the system only:**
 
 * current_results_path - The path to the current results folder, as it makes a new mini-folder each time the code is run to keep results separate
 * results_path - The path to the overall results folder (where the temperature data is kept) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
