@@ -169,12 +169,11 @@ This module runs SHELXL for all datasets in folders based on reference structure
 
 **conf.yaml parameters for user to edit:**
 
-None
+* ref_ins_path - The path to the reference file within the home path after it has been copied
 
 **conf.yaml parameters used by the system only:**
 
 * analysis_path - The path to the analysis folder
-* ref_ins_path - The path to the reference file within the home path after it has been copied
 
 ### modules/rotation_planes.py
 

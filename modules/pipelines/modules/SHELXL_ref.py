@@ -70,14 +70,20 @@ class SHELXL:
         self.cell = []
         with open (self.cfg['ref_ins_path'], 'rt') as reference:
             structure = reference.readlines()
-        for index, line in enumerate(structure):
-            if index > 2:
-                self.structure.append(line)
+        index = 0
+        for line in structure:
+            if 'REM' not in line:
+                if index > 2:
+                    self.structure.append(line)
+                index += 1
         with open (file_name, 'rt') as new_file:
             cell = new_file.readlines()
-        for index, line in enumerate(cell):
-            if index <= 2:
-                self.cell.append(line)
+        index = 0
+        for line in cell:
+            if 'REM' not in line:
+                if index <= 2:
+                    self.cell.append(line)
+                index += 1
         with open(file_name, 'w') as combined:
             for line in self.cell:
                 combined.write(line)
