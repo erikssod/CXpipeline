@@ -92,27 +92,41 @@ class CIF_File:
     
     def get_data(self):
         
-        #This function searches through all of the files and folders below the current directory location for CIF files and sorts them properly
+        #This function searches through all of the folders in the current working directory for a cif file
         
-        for dirName, subdirList, fileList in os.walk(os.getcwd()):
-            sorted_fileList = self.sorted_properly(fileList)
-            for files in sorted_fileList:
+        #for dirName, subdirList, fileList in os.walk(os.getcwd()):
+            #sorted_dirNames
+            
+            #for files in fileList:
+                #if files.endswith('.cif') and files.lower() not in self.cif_files:
+                    #self.cif_files.append(files.lower())
+                    #self.logger.info(files)
+                    #cif_file = os.path.join(dirName, files)
+            #sorted_fileList = self.sorted_properly(fileList)
+                #for files in sorted_fileList:
+               
+        for index, run in enumerate(self.sorted_properly(os.listdir())):
+            if os.path.isdir(run):
+                os.chdir(run)
+                for files in os.listdir():
+               
                 
                 #Once a unique CIF file is identified (checks for duplicates), the name is appended to a list and the data_harvest function is run on it 
 
-                if files.endswith('.cif') and files.lower() not in self.cif_files:
-                    self.cif_files.append(files.lower())
-                    self.logger.info(files)
-                    cif_file = os.path.join(dirName, files)
-                
+                    if files.endswith('.cif') and files.lower() not in self.cif_files:
+                        self.cif_files.append(files.lower())
+                        self.logger.info(files)
+                        cif_file = os.path.join(os.getcwd(), files)
                     
-                    temp_data, structures_in_cif_tmp, successful_positions_tmp = self.data_harvest(cif_file)
-                    
-                    self.data = self.data.append(temp_data)
-                    self.structures_in_cif.append(structures_in_cif_tmp)
-                    
-                    for item in successful_positions_tmp:
-                        self.successful_positions.append(item)
+                        
+                        temp_data, structures_in_cif_tmp, successful_positions_tmp = self.data_harvest(cif_file)
+                        
+                        self.data = self.data.append(temp_data)
+                        self.structures_in_cif.append(structures_in_cif_tmp)
+                        
+                        for item in successful_positions_tmp:
+                            self.successful_positions.append(item)
+                os.chdir('..')
                     
         self.cfg['Structures_in_each_CIF'] = self.structures_in_cif
         self.cfg['Successful_Positions'] = self.successful_positions
