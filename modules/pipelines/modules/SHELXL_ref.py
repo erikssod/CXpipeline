@@ -100,25 +100,31 @@ class SHELXL:
                 for item in os.listdir():
                     if item.endswith('.ins'):
                         stem = pathlib.Path(item).stem
-                        self.import_refinement(item)
-                        weight = []
+                        #self.import_refinement(item)
                         for m in range(0,10):
+                            weight = []
                             shelxl = subprocess.call(['shelxl', stem])
                             shutil.copy(stem + '.res', item)
                             with open (stem + '.res', 'rt') as refinement:
+                                end_flag = False
                                 for line in refinement:
-                                    if 'WGHT' in line:
+                                    if end_flag == True and 'WGHT' in line:
                                         weight.append(line)
+                                    elif 'END' in line:
+                                        end_flag = True
                             with open (item, 'rt') as initial:
                                 lines = initial.readlines()
                             
-                            ACTA_flag = 0
+                            self.logger.info(run)
+                            self.logger.info(weight)
+                            
+                            ACTA_flag = False
                             
                             for line in lines:
                                 if 'ACTA' in line:
-                                    ACTA_flag += 1
+                                    ACTA_flag = True
                                     
-                            if ACTA_flag == 0:
+                            if ACTA_flag == False:
                                     
                                 with open (item, 'w') as initial:
                                     for line in lines:
@@ -128,7 +134,7 @@ class SHELXL:
                                             
                                         if 'WGHT' in line:
                                             try: 
-                                                initial.write(weight[1])
+                                                initial.write(weight[0])
                                             
                                             except IndexError as error:
                                                 self.logger.info(f'Refinement Unstable - {error}')
