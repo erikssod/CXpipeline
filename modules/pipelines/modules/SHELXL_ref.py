@@ -100,7 +100,7 @@ class SHELXL:
                 for item in os.listdir():
                     if item.endswith('.ins'):
                         stem = pathlib.Path(item).stem
-                        #self.import_refinement(item)
+                        self.import_refinement(item)
                         for m in range(0,10):
                             weight = []
                             shelxl = subprocess.call(['shelxl', stem])
