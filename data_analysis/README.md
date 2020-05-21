@@ -1,5 +1,8 @@
-Data Analysis modules go here
+##Data Analysis modules
 
-Xprep Graphs for a single dataset (Kate)
+These are tools designed to be run in as standalone scripts 
+to provide graphical informationon collected datasets.
 
-Unit Cell Analysis (Amy)
+## Current available tools
+* Xprep Graphs for a single dataset
+* Unit Cell Analysis

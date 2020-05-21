@@ -1,4 +1,4 @@
-#!/bin/env python3.7
+#!/bin/env python3
 #-----------------------------------------------------------------------------
 # This program reads in a UNIT_CELL_CONTENTS .txt file obtained from
 # running the following command in a directory holding multiple datasets
