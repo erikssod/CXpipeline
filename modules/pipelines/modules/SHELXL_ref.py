@@ -70,25 +70,56 @@ class SHELXL:
         self.cell = []
         with open (self.cfg['ref_ins_path'], 'rt') as reference:
             structure = reference.readlines()
-        index = 0
+        
+        
+        struct_flag = False
+        
         for line in structure:
-            if 'REM' not in line:
-                if index > 2:
-                    self.structure.append(line)
-                index += 1
+            if struct_flag == True:
+                self.structure.append(line)
+            elif 'LATT' in line:
+                self.structure.append(line)
+                struct_flag = True
         with open (file_name, 'rt') as new_file:
             cell = new_file.readlines()
-        index = 0
+        
+        cell_keys = ['TITL', 'CELL', 'ZERR']
         for line in cell:
-            if 'REM' not in line:
-                if index <= 2:
+            for item in cell_keys:
+                if item in line and 'REM' not in line:
                     self.cell.append(line)
-                index += 1
         with open(file_name, 'w') as combined:
             for line in self.cell:
                 combined.write(line)
             for line in self.structure:
                 combined.write(line)
+                
+    def convergence_check(self, input_file):
+        convergence = False
+        
+        with open (input_file, 'rt') as refinement:
+            lines = refinement.readlines()
+            
+        shift_param = []
+        
+        for line in lines:
+            if 'Mean shift' in line:
+                shift_param.append(line)
+                
+        self.logger.info('First Least Squares: ' + shift_param[0])
+        self.logger.info('Last Least Squares: ' + shift_param[-1])
+        
+        first_shift = float(shift_param[0].split(' ')[6])
+        last_shift = float(shift_param[-1].split(' ')[6])
+        
+        if last_shift == 0.000 and first_shift <= 0.003:
+            convergence = True
+            self.logger.info('Refinement has converged')
+        else:
+            convergence = False
+            self.logger.info('Refinement has not converged')
+        
+        return convergence 
         
     def run_shelxl(self):
         
@@ -101,17 +132,22 @@ class SHELXL:
                     if item.endswith('.ins'):
                         stem = pathlib.Path(item).stem
                         self.import_refinement(item)
-                        for m in range(0,10):
-                            weight = []
+                        convergence = False
+                        refine_count = 0
+                        while convergence == False and refine_count < 20:
+                            refine_count += 1
+                            weight = ''
                             shelxl = subprocess.call(['shelxl', stem])
                             shutil.copy(stem + '.res', item)
                             with open (stem + '.res', 'rt') as refinement:
+                                lines = refinement.readlines()
                                 end_flag = False
-                                for line in refinement:
+                                for line in lines:
                                     if end_flag == True and 'WGHT' in line:
-                                        weight.append(line)
+                                        weight = line
                                     elif 'END' in line:
                                         end_flag = True
+                                        
                             with open (item, 'rt') as initial:
                                 lines = initial.readlines()
                             
@@ -124,23 +160,23 @@ class SHELXL:
                                 if 'ACTA' in line:
                                     ACTA_flag = True
                                     
-                            if ACTA_flag == False:
-                                    
-                                with open (item, 'w') as initial:
-                                    for line in lines:
-                                        if 'FMAP' in line:
-                                            initial.write('ACTA \n') 
-                                            initial.write(line)
+                            with open (item, 'w') as initial:
+                                for line in lines:
+                                    if 'WGHT' in line and ACTA_flag == False:
+                                        initial.write('ACTA \n') 
+                                        ACTA_flag = True
+                                        initial.write(weight)
                                             
-                                        if 'WGHT' in line:
-                                            try: 
-                                                initial.write(weight[0])
+                                    elif 'WGHT' in line and ACTA_flag == True:
+                                        initial.write(weight)
                                             
-                                            except IndexError as error:
-                                                self.logger.info(f'Refinement Unstable - {error}')
-                                            
-                                        else:
-                                            initial.write(line)
+                                    else:
+                                        initial.write(line)
+                                        
+                            if os.path.exists(stem + '.lst'):
+                                convergence = self.convergence_check(stem + '.lst')
+                            else:
+                                continue
                         
                         file_size = os.stat(item)
                         
