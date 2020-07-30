@@ -33,35 +33,23 @@ import matplotlib.ticker as ticker
 class VT_Analysis:  
     def __init__(self, location = 'temp', home_path = os.getcwd()):
         
-        #Sets up the logbook - if being used in a pipeline, then the home_path can be pushed through, otherwise, the current working directory is taken to be the home_path
+        config = Config()
         
-        #Ideally this will be a parameter in the sys_conf.yaml file, but you need the logbook established before reading in the .yaml file..... 
-        
-        logbook.FileHandler(home_path + '/error_output.txt', 'a').push_application()  
-        self.logger = logbook.Logger(self.__class__.__name__)
-        logbook.set_datetime_format("local")
-        self.logger.info('Class Initialised!')
-        
-        #Finds the path of this module and uses the known directory tree of CX-ASAP to find the config file
-    
-        conf_path = pathlib.Path(os.path.abspath(__file__)).parent.parent.parent / 'conf.yaml'
-        
-        with open (conf_path, 'r') as f:
-            try: 
-                self.cfg = yaml.load(f)
-            except yaml.YAMLERROR as error:
-                self.logger.critical(f'Failed to open config file with {error}')
-                exit()
+        self.cfg = config.cfg
+        self.conf_path = config.conf_path
+        self.logger = config.logger
                 
-        if location == 'temp':
-            os.chdir(self.cfg['current_results_path'])
+        #if location == 'temp':
+            #os.chdir(self.cfg['System_Parameters']['current_results_path'])
+            
+        os.chdir(location)
                 
                 
         #Set up empty lists and defines what the x/y axis headers are (assuming values from within this automation pipeline - user defined headers can be used later)
         
         self.behaviour = []
         self.vt_headers_y = ["_cell_length_a", "_cell_length_b", "_cell_length_c", "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma", "_cell_volume"]
-        for item in self.cfg['cell_parameters']:
+        for item in self.cfg['User_Parameters_Full_Pipeline']['Analysis_Requirements']['cell_parameters']:
             
             #allows for variation in which CIF temperature parameter is used 
             
@@ -93,18 +81,32 @@ class VT_Analysis:
         plt.title(title)
         plt.legend()
         
+    def graph_full(self, x, y, x_title, y_title, y_series_title, graph_title, colour = None, marker = None, linewidth = None, s = None):
+        
+        #Function to plot the graphs to condense the code a bit with optional changes to the aesthetics of the plot 
+        
+        for index, item in enumerate(y):
+            if colour == None:
+                plt.scatter(x, item, label = y_series_title[index])
+            else:
+                plt.scatter(x, item, c = colour[index], marker = marker[index], linewidth = linewidth[index], s = s[index], label = y_series_title[index])
+        plt.xlabel(x_title, fontsize = 12)
+        plt.ylabel(y_title, fontsize = 12)
+        plt.title(graph_title)
+        plt.legend(fontsize = 12)
+        
     def determine_temp_behaviour(self):
         
         #Searches for the temperature parameter used 
         
-        if self.cfg['use_cif_headings'].lower() == 'yes':
+        if self.cfg['Extra_User_Parameters_Individual_Modules']['use_custom_headings'].lower() == 'no':
         
-            for item in self.cfg['cell_parameters']:
+            for item in self.cfg['User_Parameters_Full_Pipeline']['Analysis_Requirements']['cell_parameters']:
                 if 'temperature' in item and 'error' not in item:
                     self.temperature_parameter = item
                     
         else:
-             self.temperature_parameter = self.cfg['user_headings_x']
+             self.temperature_parameter = self.cfg['Extra_User_Parameters_Individual_Modules']['user_headings_x']
         
         data = self.df[self.temperature_parameter]
         
@@ -152,17 +154,6 @@ class VT_Analysis:
         return self.behaviour
       
     def analysis(self):
-        
-        #Imports the temperatures from the autoprocess cifs into the dataframe if required 
-        
-        if self.cfg['temps_already_in_cifs'] == 'no':
-       
-            temp_df = pd.read_csv(os.path.join(self.cfg['results_path'], 'Just_Temps.csv'))
-        
-            self.df['_diffrn_ambient_temperature'] = temp_df['_diffrn_ambient_temperature']
-            self.df['_diffrn_ambient_temperature_error'] = temp_df['_diffrn_ambient_temperature_error']
-            
-            self.df.to_csv('CIF_Parameters.csv', index = None)
        
        #Remove duplicates to define search condition to separate dataframes by their behaviour - this allows for the output graphs to be colour-coded 
     
@@ -175,7 +166,7 @@ class VT_Analysis:
             separated_by_behaviour_dfs.append(self.df[condition])
         
         for index, item in enumerate(separated_by_behaviour_dfs):
-            if self.cfg['use_cif_headings'].lower() == 'yes':
+            if self.cfg['Extra_User_Parameters_Individual_Modules']['use_custom_headings'].lower() == 'no':
                 x = item[self.vt_headers_x]
                 counter = 1
                 for param in self.vt_headers_y:
@@ -183,22 +174,34 @@ class VT_Analysis:
                     self.graph(x,y,param,counter, self.discrete_behaviour[index] + ' temperature')
                     counter += 1
             else:
-                x = item[self.cfg['user_headings_x']]
+                x = item[self.cfg['Extra_User_Parameters_Individual_Modules']['user_headings_x']]
                 counter = 1
-                for param in self.cfg['user_headings_y']:
+                for param in self.cfg['Extra_User_Parameters_Individual_Modules']['user_headings_y']:
                     y = item[param]
                     self.graph(x,y,param,counter, self.discrete_behaviour[index] + ' temperature')
-                    counter += 1
+                    counter += 1        
                     
                     
         figure = plt.gcf()
         figure.set_size_inches(16,12)
         plt.savefig('Variable_Temperature_Analysis.png', bbox_inches = 'tight', dpi = 100)
         plt.clf()
+        
+        #Plot Statistics
+        
+        self.graph_full(self.df['_diffrn_ambient_temperature'], [self.df['_diffrn_reflns_av_R_equivalents'], self.df['_diffrn_measured_fraction_theta_full'], self.df['_refine_ls_R_factor_gt']],'Temperature(K)', 'Statistic', ['Rint', 'Completeness', 'R-Factor'], 'Overall Data Statistics')
+        
+        figure = plt.gcf()
+        figure.set_size_inches(16,12)
+        plt.savefig('Variable_Temperature_Statistics.png', bbox_inches = 'tight', dpi = 100)
+        plt.clf()
                    
 #If the module is run independently, the class is initialised, and the analysis is run 
   
 if __name__ == "__main__":
+    from system.yaml_configuration import Nice_YAML_Dumper, Config
     vt_analysis = VT_Analysis(os.getcwd())
-    vt_analysis.import_data(vt_analysis.cfg['data_file_name'])
+    vt_analysis.import_data(vt_analysis.cfg['Extra_User_Parameters_Individual_Modules']['data_file_name'])
     vt_analysis.analysis()
+else:
+    from .system.yaml_configuration import Nice_YAML_Dumper, Config

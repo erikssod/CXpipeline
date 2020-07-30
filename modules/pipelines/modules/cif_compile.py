@@ -21,36 +21,25 @@ import yaml
 import logbook
 import pathlib
 from CifFile import ReadCif
+import pandas as pd
 
 #----------Class Definition----------#
 
 class CIF_Combine:  
     def __init__(self, location = 'temp', home_path = os.getcwd()):
         
-        #Sets up the logbook - if being used in a pipeline, then the home_path can be pushed through, otherwise, the current working directory is taken to be the home_path
+        config = Config()
         
-        #Ideally this will be a parameter in the sys_conf.yaml file, but you need the logbook established before reading in the .yaml file..... 
-        
-        logbook.FileHandler(home_path + '/error_output.txt', 'a').push_application()  
-        self.logger = logbook.Logger(self.__class__.__name__)
-        logbook.set_datetime_format("local")
-        self.logger.info('Class Initialised!')
-        
-        #Finds the path of this module and uses the known directory tree of CX-ASAP to find the config file
-    
-        self.conf_path = pathlib.Path(os.path.abspath(__file__)).parent.parent.parent / 'conf.yaml'
-        
-        with open (self.conf_path, 'r') as f:
-            try: 
-                self.cfg = yaml.load(f)
-            except yaml.YAMLERROR as error:
-                self.logger.critical(f'Failed to open config file with {error}')
-                exit()
+        self.cfg = config.cfg
+        self.conf_path = config.conf_path
+        self.logger = config.logger
         
         self.location = location
         
-        if self.location == 'temp':
-            os.chdir(self.cfg['analysis_path'])
+        #if self.location == 'temp':
+            #os.chdir(self.cfg['System_Parameters']['analysis_path'])
+            
+        os.chdir(location)
     
     def sorted_properly(self, data):
         
@@ -82,7 +71,7 @@ class CIF_Combine:
                 else:
                     cif.write(line)
                         
-    def finalise_parameters(self, file_name, index):
+    def finalise_parameters(self, file_name, index, current_temp):
         
         #Finalises the CIF with important parameters such as beamline parameters 
         
@@ -94,35 +83,36 @@ class CIF_Combine:
             os.remove(file_name)
             self.logger.info(f'Cif empty due to poor refinement - {error}')
         else:
+            
             self.C = data_block['_diffrn_reflns_number']
             self.A = data_block['_diffrn_reflns_theta_min']
             self.B = data_block['_diffrn_reflns_theta_max']
             
-            beamline = self.cfg['beamline']
+            beamline = self.cfg['User_Parameters_Full_Pipeline']['Experiment_Configuration']['beamline']
             
             if beamline != '':
             
-                data_block['_computing_data_collection'] = self.cfg[beamline +'_data_collection']
-                data_block['_exptl_absorp_correction_type'] = self.cfg[beamline +'_absorp_correction']
-                data_block['_diffrn_radiation_wavelength'] = self.cfg['wavelength']
-                data_block['_diffrn_radiation_type'] = self.cfg[beamline +'_radiation_type']
-                data_block['_diffrn_source'] = self.cfg[beamline +'_radiation_type']
-                data_block['_diffrn_measurement_device_type'] = self.cfg[beamline +'_detector']
-                data_block['_diffrn_measurement_method'] = self.cfg[beamline +'_measurement_method']
-                data_block['_computing_cell_refinement'] = self.cfg[beamline +'_cell_refinement']
-                data_block['_computing_data_reduction'] = self.cfg[beamline +'_cell_refinement']
-                data_block['_computing_structure_solution'] = self.cfg[beamline +'_structure_soln']
-                data_block['_diffrn_radiation_monochromator'] = self.cfg[beamline +'_monochromator']
-                data_block['_diffrn_radiation_source'] = self.cfg[beamline +'_source']
+                data_block['_computing_data_collection'] = self.cfg['Instrument_Parameters'][beamline +'_data_collection']
+                data_block['_exptl_absorp_correction_type'] = self.cfg['Instrument_Parameters'][beamline +'_absorp_correction']
+                data_block['_diffrn_radiation_wavelength'] = self.cfg['User_Parameters_Full_Pipeline']['Experiment_Configuration']['wavelength']
+                data_block['_diffrn_radiation_type'] = self.cfg['Instrument_Parameters'][beamline +'_radiation_type']
+                data_block['_diffrn_source'] = self.cfg['Instrument_Parameters'][beamline +'_radiation_type']
+                data_block['_diffrn_measurement_device_type'] = self.cfg['Instrument_Parameters'][beamline +'_detector']
+                data_block['_diffrn_measurement_method'] = self.cfg['Instrument_Parameters'][beamline +'_measurement_method']
+                data_block['_computing_cell_refinement'] = self.cfg['Instrument_Parameters'][beamline +'_cell_refinement']
+                data_block['_computing_data_reduction'] = self.cfg['Instrument_Parameters'][beamline +'_cell_refinement']
+                data_block['_computing_structure_solution'] = self.cfg['Instrument_Parameters'][beamline +'_structure_soln']
+                data_block['_diffrn_radiation_monochromator'] = self.cfg['Instrument_Parameters'][beamline +'_monochromator']
+                data_block['_diffrn_radiation_source'] = self.cfg['Instrument_Parameters'][beamline +'_source']
             
-            #data_block['_chemical_formula_moiety'] = self.cfg['chemical_formula']
-            #data_block['_exptl_crystal_colour'] = self.cfg['crystal_colour']
-            #data_block['_exptl_crystal_description'] = self.cfg['crystal_habit']
-            #data_block['_cell_measurement_temperature'] = self.cfg['temp']
-            #data_block['_diffrn_ambient_temperature'] = self.cfg['temp']
-            #data_block['_exptl_crystal_size_max'] = self.cfg['max_crystal_dimension']
-            #data_block['_exptl_crystal_size_mid'] = self.cfg['middle_crystal_dimension']
-            #data_block['_exptl_crystal_size_min'] = self.cfg['min_crystal_dimension']
+            data_block['_chemical_formula_moiety'] = self.cfg['User_Parameters_Full_Pipeline']['Crystal_Descriptions']['chemical_formula']
+            data_block['_exptl_crystal_colour'] = self.cfg['User_Parameters_Full_Pipeline']['Crystal_Descriptions']['crystal_colour']
+            data_block['_exptl_crystal_description'] = self.cfg['User_Parameters_Full_Pipeline']['Crystal_Descriptions']['crystal_habit']
+            data_block['_cell_measurement_temperature'] = current_temp
+            data_block['_diffrn_ambient_temperature'] = current_temp
+            data_block['_exptl_crystal_size_max'] = self.cfg['User_Parameters_Full_Pipeline']['Crystal_Descriptions']['max_crystal_dimension']
+            data_block['_exptl_crystal_size_mid'] = self.cfg['User_Parameters_Full_Pipeline']['Crystal_Descriptions']['middle_crystal_dimension']
+            data_block['_exptl_crystal_size_min'] = self.cfg['User_Parameters_Full_Pipeline']['Crystal_Descriptions']['min_crystal_dimension']
             data_block['_cell_measurement_reflns_used'] = self.C
             data_block['_cell_measurement_theta_min'] = self.A
             data_block['_cell_measurement_theta_max'] = self.B
@@ -136,16 +126,29 @@ class CIF_Combine:
         
         #This function compiles the cifs into one place and runs the previous two functions 
         
+        index_2 = 0
+        
         for index, run in enumerate(self.sorted_properly(os.listdir())):
             if os.path.isdir(run):
                 os.chdir(run)
-                for item in os.listdir():
+                for item in self.sorted_properly(os.listdir()):
                     if item.endswith('.cif') and 'autoprocess' not in item:
+
+                        if self.location == 'temp': 
+                            temperatures = os.path.join(self.cfg['System_Parameters']['results_path'], 'Just_Temps.csv')
+                            temp_heading = '_diffrn_ambient_temperature'
+                        else:
+                            temperatures = self.cfg['Extra_User_Parameters_Individual_Modules']['temperature_path']
+                            temp_heading = self.cfg['Extra_User_Parameters_Individual_Modules']['temperature_heading']
+                            
+                        temp_df = pd.read_csv(temperatures)
+                        current_temp = temp_df.at[index_2, temp_heading]
+                        
                         self.datablock_naming(item,index)
-                        self.finalise_parameters(item, index)
+                        self.finalise_parameters(item, index, current_temp)
                         
                         if self.location == 'temp':
-                            with open (os.path.join(self.cfg['current_results_path'], str(self.cfg['process_counter']) + '_all_cifs.cif'), 'a') as combined_cif:
+                            with open (os.path.join(self.cfg['System_Parameters']['current_results_path'], '_all_cifs.cif'), 'a') as combined_cif:
                                 try:
                                     with open (item) as single_cif:
                                         combined_cif.write(single_cif.read())
@@ -158,13 +161,19 @@ class CIF_Combine:
                                         combined_cif.write(single_cif.read())
                                 except FileNotFoundError as error:
                                     self.logger.info('Stuff messed up :(')
+                    if item == 'autoprocess.cif':
+                        index_2 += 1
+                        
                 os.chdir('..')
     
 #If the module is run independently, the class is initialised,and the cifs are compiled 
   
 if __name__ == "__main__":
+    from system.yaml_configuration import Nice_YAML_Dumper, Config
     combine = CIF_Combine(os.getcwd())
     combine.combine()
+else:
+    from .system.yaml_configuration import Nice_YAML_Dumper, Config
 
 
         

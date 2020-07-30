@@ -30,19 +30,11 @@ class VT_Setup():
         
         #Set up logbook and config file 
         
-        logbook.FileHandler(home_path + '/error_output.txt', 'a').push_application()  
-        self.logger = logbook.Logger(self.__class__.__name__)
-        logbook.set_datetime_format("local")
-        self.logger.info('Class Initialised!')
+        config = Config()
         
-        self.conf_path = pathlib.Path(os.path.abspath(__file__)).parent.parent.parent / 'conf.yaml'
-        
-        with open (self.conf_path, 'r') as f:
-            try: 
-                self.cfg = yaml.load(f)
-            except yaml.YAMLERROR as error:
-                self.logger.critical(f'Failed to open config file with {error}')
-                exit()
+        self.cfg = config.cfg
+        self.conf_path = config.conf_path
+        self.logger = config.logger
                 
                 
     def sorted_properly(self, data):
@@ -58,9 +50,9 @@ class VT_Setup():
 
         #This part of the code pulls all of the temperature parameters from the autoprocess.cif 
 
-        if not os.path.exists(os.path.join(self.cfg['results_path'], 'Just Temps.csv')):
+        if not os.path.exists(os.path.join(self.cfg['System_Parameters']['results_path'], 'Just Temps.csv')):
 
-            os.chdir(self.cfg['analysis_path'])
+            os.chdir(self.cfg['System_Parameters']['analysis_path'])
 
             for run in self.sorted_properly(os.listdir()):
                 try:
@@ -73,7 +65,7 @@ class VT_Setup():
                             with open (files, 'r') as cif_file:
                                 lines = cif_file.readlines()
                                 
-                            with open(os.path.join(self.cfg['results_path'], 'temp_cif.cif'), 'a') as combined:
+                            with open(os.path.join(self.cfg['System_Parameters']['results_path'], 'temp_cif.cif'), 'a') as combined:
                                 for line in lines:
                                     combined.write(line)
                                     
@@ -85,12 +77,12 @@ class VT_Setup():
                             
                     os.chdir('..')
                 
-            os.chdir(self.cfg['results_path'])    
+            os.chdir(self.cfg['System_Parameters']['results_path'])    
 
         
         data = {'_diffrn_ambient_temperature':[], '_diffrn_ambient_temperature_error': []}
         
-        temp_cif_path = os.path.join(self.cfg['results_path'], 'temp_cif.cif')
+        temp_cif_path = os.path.join(self.cfg['System_Parameters']['results_path'], 'temp_cif.cif')
 
         with open (temp_cif_path, 'rt') as f:
             for line in f:
@@ -115,58 +107,66 @@ class VT_Setup():
 
         self.temp_df.to_csv('Just_Temps.csv', index = None)
 
-        os.remove(os.path.join(self.cfg['results_path'], 'temp_cif.cif'))
+        os.remove(os.path.join(self.cfg['System_Parameters']['results_path'], 'temp_cif.cif'))
         
     def Ref_Setup(self):
-        #rewrites the ins file without the REM lines - to make things easier 
-        
-        good_lines = []
-        cell_flag = 0
-        good_index = 0
-        
-        with open (self.cfg['ref_ins_path'], 'rt') as ins_file:
-            for index, line in enumerate(ins_file):
-                if 'CELL' in line:
-                    good_index = index
-        with open (self.cfg['ref_ins_path'], 'rt') as ins_file:
-            for index, line in enumerate(ins_file):
-                if index == 0 or index >= good_index:
-                    good_lines.append(line)
-       
-        with open (self.cfg['ref_ins_path'], 'w') as ins_file:
-            for line in good_lines:
-                ins_file.write(line)
                 
         #Finds the space group and cell parameters of the reference structure and saves them to the config file 
                 
-        with open(self.cfg['ref_ins_path'], 'rt') as ins_file:
+        with open(self.cfg['System_Parameters']['ref_ins_path'], 'rt') as ins_file:
             split_line = []
             for line in ins_file:
                 if 'CELL' in line:
                     split_line = line.split()
-                elif 'TITL' in line:
-                    self.cfg['space_group'] = line.split()[3]
-                    
+                elif line[0:4] == 'TITL':
+                    self.cfg['System_Parameters']['space_group'] = line.split()[3]
+             
         ref_parameters = ['ref_INS_a', 'ref_INS_b', 'ref_INS_c', 'ref_INS_alpha', 'ref_INS_beta', 'ref_INS_gamma']
         
         for index, item in enumerate(ref_parameters):
-            self.cfg[item] = float(split_line[index + 2])
+            self.cfg['System_Parameters'][item] = float(split_line[index + 2])
+                    
+        with open(self.cfg['System_Parameters']['ref_ins_path'], 'rt') as ins_file: 
+            content = ins_file.readlines()
+        
+        flag = False
+        
+        with open (self.cfg['System_Parameters']['ref_ins_path'], 'w') as ins_file:
+            for line in content:
+                if 'MPLA' in line:
+                    flag = True
+            if flag == False:
+                for line in content:
+                    if 'PLAN' in line:
+                        ins_file.write(line)
+                        ins_file.write('MPLA ' + self.cfg['User_Parameters_Full_Pipeline']['Analysis_Requirements']['atoms_for_rotation'] + '\n')
+                    else:
+                        ins_file.write(line)
+            else:
+                for line in content:
+                    ins_file.write(line)
                                               
         #Calculates the volume because it's not actually written anywhere 
 
-        self.cfg['ref_INS_volume'] = self.cfg['ref_INS_a'] * self.cfg['ref_INS_b'] * self.cfg['ref_INS_c'] * math.sqrt(1 - (math.cos(self.cfg['ref_INS_alpha'] * (math.pi / 180)) ** 2) - (math.cos(self.cfg['ref_INS_beta'] * (math.pi / 180)) ** 2) - (math.cos(self.cfg['ref_INS_gamma'] * (math.pi / 180)) ** 2) + (2 * math.cos(self.cfg['ref_INS_alpha'] * (math.pi / 180)) * math.cos(self.cfg['ref_INS_beta'] * (math.pi / 180)) * math.cos(self.cfg['ref_INS_gamma'] * (math.pi / 180)))) 
-        
-        self.cfg['temps_already_in_cifs'] = 'no'
+        self.cfg['System_Parameters']['ref_INS_volume'] = self.cfg['System_Parameters']['ref_INS_a'] * self.cfg['System_Parameters']['ref_INS_b'] * self.cfg['System_Parameters']['ref_INS_c'] * math.sqrt(1 - (math.cos(self.cfg['System_Parameters']['ref_INS_alpha'] * (math.pi / 180)) ** 2) - (math.cos(self.cfg['System_Parameters']['ref_INS_beta'] * (math.pi / 180)) ** 2) - (math.cos(self.cfg['System_Parameters']['ref_INS_gamma'] * (math.pi / 180)) ** 2) + (2 * math.cos(self.cfg['System_Parameters']['ref_INS_alpha'] * (math.pi / 180)) * math.cos(self.cfg['System_Parameters']['ref_INS_beta'] * (math.pi / 180)) * math.cos(self.cfg['System_Parameters']['ref_INS_gamma'] * (math.pi / 180)))) 
         
         with open (self.conf_path, 'w') as f:
-            yaml.dump(self.cfg, f)
+            yaml.dump(self.cfg, f, default_flow_style=False, Dumper=Nice_YAML_Dumper, sort_keys=False)
+        
+
                   
 #If the code is called individually from the commandline, the below code runs the required functions 
                     
 if __name__ == "__main__":
+    
+    from system.yaml_configuration import Nice_YAML_Dumper, Config
+    
     initialisation = VT_Setup()
     initialisation.Temperature_Collection()
     initialisation.Ref_Setup()
+else:
+    
+    from .system.yaml_configuration import Nice_YAML_Dumper, Config
             
             
             

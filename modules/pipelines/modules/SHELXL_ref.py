@@ -11,11 +11,7 @@
       
 #----------Instructions for Use----------#
 
-#This module will read and analyse all of the CIF files in the current folder and below in the directory tree
-
-#If you would like a single CIF file analysed, place it in an otherwise empty folder
-
-#If you would like multiple CIF files analysed, place all of them into a single folder or below in the directory tree 
+#This module will refine a series of structures below in the directory tree based on a reference
 
 #----------Required Modules----------#
 
@@ -28,34 +24,32 @@ import subprocess
 import shutil
 import pandas as pd
 import matplotlib.pyplot as plt
+import statistics 
 
 #----------Class Definition----------#
 
 class SHELXL:  
     def __init__(self, location = 'temp', home_path = os.getcwd()):
         
-        #Sets up the logbook - if being used in a pipeline, then the home_path can be pushed through, otherwise, the current working directory is taken to be the home_path
+        config = Config()
         
-        #Ideally this will be a parameter in the sys_conf.yaml file, but you need the logbook established before reading in the .yaml file..... 
-        
-        logbook.FileHandler(home_path + '/error_output.txt', 'a').push_application()  
-        self.logger = logbook.Logger(self.__class__.__name__)
-        logbook.set_datetime_format("local")
-        self.logger.info('Class Initialised!')
-        
-        #Finds the path of this module and uses the known directory tree of CX-ASAP to find the config file
-    
-        self.conf_path = pathlib.Path(os.path.abspath(__file__)).parent.parent.parent / 'conf.yaml'
-        
-        with open (self.conf_path, 'r') as f:
-            try: 
-                self.cfg = yaml.load(f)
-            except yaml.YAMLERROR as error:
-                self.logger.critical(f'Failed to open config file with {error}')
-                exit()
+        self.cfg = config.cfg
+        self.conf_path = config.conf_path
+        self.logger = config.logger
                 
-        if location == 'temp':
-            os.chdir(self.cfg['analysis_path'])
+        #if location == 'temp':
+            #os.chdir(self.cfg['System_Parameters']['analysis_path'])
+        #else:
+            #self.cfg['System_Parameters']['ref_ins_path'] = self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['reference_path']
+            #with open (self.conf_path, 'w') as f:
+                #yaml.dump(self.cfg, f, default_flow_style=False, Dumper=Nice_YAML_Dumper, sort_keys=False)
+                
+        os.chdir(location)
+        if location == os.getcwd():
+            self.cfg['System_Parameters']['ref_ins_path'] = self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['reference_path']
+            with open (self.conf_path, 'w') as f:
+                yaml.dump(self.cfg, f, default_flow_style=False, Dumper=Nice_YAML_Dumper, sort_keys=False)
+                
                 
     
     def sorted_properly(self, data):
@@ -69,7 +63,7 @@ class SHELXL:
     
     def import_refinement(self, file_name):
         
-        with open (self.cfg['ref_ins_path'], 'rt') as reference:
+        with open (self.cfg['System_Parameters']['ref_ins_path'], 'rt') as reference:
             structure = reference.read()
         ref_x = re.search('LATT', structure)
         ref_y = re.search('END', structure)
@@ -80,7 +74,11 @@ class SHELXL:
         new_y = re.search('LATT', cell)
         
         if new_x is None or new_y is None or ref_x is None or ref_y is None:
-            pass
+            if os.path.exists(reference_path) == True:
+                pass
+            else:
+                self.logger.critical('.ins files of incorrect format')
+                exit()
         else:
             complete_file = cell[new_x.start():new_y.start()] + structure[ref_x.start():ref_y.end()]
             
@@ -102,14 +100,8 @@ class SHELXL:
         
         for item in shift_param:
             shift.append(float(item.split(' ')[6]))
-        
-        self.logger.info('First Least Squares: ' + shift_param[0])
-        self.logger.info('Last Least Squares: ' + shift_param[-1])
-        
-        first_shift = float(shift_param[0].split(' ')[6])
-        last_shift = float(shift_param[-1].split(' ')[6])
-        
-        if last_shift == 0.000 and first_shift <= 0.003:
+
+        if statistics.mean(shift[-int(self.cfg['User_Parameters_Full_Pipeline']['Refinement_Configuration']['refinements_to_check']):]) <= float(self.cfg['User_Parameters_Full_Pipeline']['Refinement_Configuration']['tolerance']):
             convergence = True
             self.logger.info('Refinement has converged')
         else:
@@ -199,8 +191,10 @@ class SHELXL:
        
                 #Helps independence
         
+                        current = os.getcwd()
+        
                         if path == 'temp':
-                            os.chdir(self.cfg['current_results_path'])
+                            os.chdir(self.cfg['System_Parameters']['current_results_path'])
                         else:
                             os.chdir('..')
                     
@@ -234,7 +228,7 @@ class SHELXL:
                         plt.savefig('Refinement_Statistics_' + str(index + 1) + '.png', bbox_inches = 'tight', dpi = 100)
                         plt.clf()
                         
-                        os.chdir(run)
+                        os.chdir(current)
                         
                         
                 os.chdir('..')
@@ -245,8 +239,11 @@ class SHELXL:
 #If the module is run independently, the class is initialised, the data is collected, and printed as a .csv file
   
 if __name__ == "__main__":
+    from system.yaml_configuration import Nice_YAML_Dumper, Config
     refinement = SHELXL(os.getcwd())
     refinement.run_shelxl(os.getcwd())
+else:
+    from .system.yaml_configuration import Nice_YAML_Dumper, Config
 
         
         

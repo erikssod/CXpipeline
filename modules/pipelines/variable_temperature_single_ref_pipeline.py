@@ -10,7 +10,7 @@
 
 #----------Instructions for Use----------#
 
-#This module acts as the overall pipeline for variable temperature analysis
+#This module acts as the overall pipeline for variable temperature analysis 
 
 #----------Required Modules----------#
 
@@ -18,6 +18,7 @@ from modules.file_setup_autoprocess import Setup
 from modules.additional_setup_vt import VT_Setup
 from modules.xprep_ref import XPREP
 from modules.SHELXL_ref import SHELXL
+from modules.rotation_planes_vt import Rotation_Planes
 from modules.cif_compile import CIF_Combine
 from modules.cif_reading import CIF_File
 from modules.variable_temp_analysis import VT_Analysis
@@ -28,16 +29,18 @@ initialisation.Organise_Directory_Tree()
 more_setup = VT_Setup()
 more_setup.Temperature_Collection()
 more_setup.Ref_Setup()
-cell_analysis = XPREP(home_path = initialisation.cfg['home_path'])
+cell_analysis = XPREP(home_path = initialisation.cfg['System_Parameters']['home_path'])
 cell_analysis.run_xprep()
-refinement = SHELXL(home_path = initialisation.cfg['home_path'])
+refinement = SHELXL(home_path = initialisation.cfg['System_Parameters']['home_path'])
 refinement.run_shelxl()
-combine = CIF_Combine(home_path = initialisation.cfg['home_path'])
+planes = Rotation_Planes(home_path = initialisation.cfg['System_Parameters']['home_path'])
+planes.rotation_planes()
+combine = CIF_Combine(home_path = initialisation.cfg['System_Parameters']['home_path'])
 combine.combine()
-analysis = CIF_File(home_path = initialisation.cfg['home_path'])
+analysis = CIF_File(home_path = initialisation.cfg['System_Parameters']['home_path'])
 data = analysis.get_data()
 analysis.data_output()
-vt_analysis = VT_Analysis(home_path = initialisation.cfg['home_path'])
-vt_analysis.import_data(vt_analysis.cfg['data_file_name'])
+vt_analysis = VT_Analysis(home_path = initialisation.cfg['System_Parameters']['home_path'])
+vt_analysis.import_data('CIF_Parameters.csv')
 vt_analysis.analysis()
 

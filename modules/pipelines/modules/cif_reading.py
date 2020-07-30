@@ -32,28 +32,16 @@ from CifFile import ReadCif
 class CIF_File:  
     def __init__(self, location = 'temp', home_path = os.getcwd()):
         
-        #Sets up the logbook - if being used in a pipeline, then the home_path can be pushed through, otherwise, the current working directory is taken to be the home_path
+        config = Config()
         
-        #Ideally this will be a parameter in the sys_conf.yaml file, but you need the logbook established before reading in the .yaml file..... 
-        
-        logbook.FileHandler(home_path + '/error_output.txt', 'a').push_application()  
-        self.logger = logbook.Logger(self.__class__.__name__)
-        logbook.set_datetime_format("local")
-        self.logger.info('Class Initialised!')
-        
-        #Finds the path of this module and uses the known directory tree of CX-ASAP to find the config file
-    
-        self.conf_path = pathlib.Path(os.path.abspath(__file__)).parent.parent.parent / 'conf.yaml'
-        
-        with open (self.conf_path, 'r') as f:
-            try: 
-                self.cfg = yaml.load(f)
-            except yaml.YAMLERROR as error:
-                self.logger.critical(f'Failed to open config file with {error}')
-                exit()
+        self.cfg = config.cfg
+        self.conf_path = config.conf_path
+        self.logger = config.logger
                 
-        if location == 'temp':
-            os.chdir(self.cfg['current_results_path'])
+        #if location == 'temp':
+            #os.chdir(self.cfg['System_Parameters']['current_results_path'])
+        
+        os.chdir(location)
                 
         #Sets up empty lists/dictionaries to later populate with data        
         
@@ -65,15 +53,15 @@ class CIF_File:
         
         #Sets these to 0 to reset from previous runs 
         
-        self.cfg['Structures_in_each_CIF'] = self.structures_in_cif
-        self.cfg['Successful_Positions'] = self.successful_positions
+        self.cfg['System_Parameters']['Structures_in_each_CIF'] = self.structures_in_cif
+        self.cfg['System_Parameters']['Successful_Positions'] = self.successful_positions
         
         with open (self.conf_path, 'w') as f:
-            yaml.dump(self.cfg, f)
+            yaml.dump(self.cfg, f, default_flow_style=False, Dumper=Nice_YAML_Dumper, sort_keys=False)
         
         #Pulls parameters from the configuration file as necessary, and uses it to set up an empty dataframe
         
-        self.search_items = self.cfg['cell_parameters']
+        self.search_items = self.cfg['User_Parameters_Full_Pipeline']['Analysis_Requirements']['cell_parameters']
         
         for item in self.search_items:
             self.results[item] = []
@@ -94,45 +82,31 @@ class CIF_File:
         
         #This function searches through all of the folders in the current working directory for a cif file
         
-        #for dirName, subdirList, fileList in os.walk(os.getcwd()):
-            #sorted_dirNames
-            
-            #for files in fileList:
-                #if files.endswith('.cif') and files.lower() not in self.cif_files:
-                    #self.cif_files.append(files.lower())
-                    #self.logger.info(files)
-                    #cif_file = os.path.join(dirName, files)
-            #sorted_fileList = self.sorted_properly(fileList)
-                #for files in sorted_fileList:
-               
-        for index, run in enumerate(self.sorted_properly(os.listdir())):
-            if os.path.isdir(run):
-                os.chdir(run)
-                for files in os.listdir():
-               
+        for dirName, subdirList, fileList in os.walk(os.getcwd()):
+            sorted_fileList = self.sorted_properly(fileList)
+            for files in sorted_fileList:
                 
                 #Once a unique CIF file is identified (checks for duplicates), the name is appended to a list and the data_harvest function is run on it 
 
-                    if files.endswith('.cif') and files.lower() not in self.cif_files:
-                        self.cif_files.append(files.lower())
-                        self.logger.info(files)
-                        cif_file = os.path.join(os.getcwd(), files)
+                if files.endswith('.cif') and files.lower() not in self.cif_files:
+                    self.cif_files.append(files.lower())
+                    self.logger.info(files)
+                    cif_file = os.path.join(os.getcwd(), files)
                     
                         
-                        temp_data, structures_in_cif_tmp, successful_positions_tmp = self.data_harvest(cif_file)
+                    temp_data, structures_in_cif_tmp, successful_positions_tmp = self.data_harvest(cif_file)
                         
-                        self.data = self.data.append(temp_data)
-                        self.structures_in_cif.append(structures_in_cif_tmp)
+                    self.data = self.data.append(temp_data)
+                    self.structures_in_cif.append(structures_in_cif_tmp)
                         
-                        for item in successful_positions_tmp:
-                            self.successful_positions.append(item)
-                os.chdir('..')
+                    for item in successful_positions_tmp:
+                        self.successful_positions.append(item)
                     
-        self.cfg['Structures_in_each_CIF'] = self.structures_in_cif
-        self.cfg['Successful_Positions'] = self.successful_positions
+        self.cfg['System_Parameters']['Structures_in_each_CIF'] = self.structures_in_cif
+        self.cfg['System_Parameters']['Successful_Positions'] = self.successful_positions
         
         with open (self.conf_path, 'w') as f:
-            yaml.dump(self.cfg, f)
+            yaml.dump(self.cfg, f, default_flow_style=False, Dumper=Nice_YAML_Dumper, sort_keys=False)
 
         return self.data
                     
@@ -219,9 +193,12 @@ class CIF_File:
 #If the module is run independently, the class is initialised, the data is collected, and printed as a .csv file
   
 if __name__ == "__main__":
+    from system.yaml_configuration import Nice_YAML_Dumper, Config
     analysis = CIF_File(os.getcwd())
     data = analysis.get_data()
     analysis.data_output()
+else: 
+    from .system.yaml_configuration import Nice_YAML_Dumper, Config
 
         
         

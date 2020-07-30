@@ -30,30 +30,25 @@ import pathlib
 class Rotation_Planes:
     
     def __init__(self, location = 'temp', home_path = os.getcwd()):
-        #Sets up the logbook - if being used in a pipeline, then the home_path can be pushed through, otherwise, the current working directory is taken to be the home_path
+
+        config = Config()
         
-        #Ideally this will be a parameter in the sys_conf.yaml file, but you need the logbook established before reading in the .yaml file..... 
-        
-        logbook.FileHandler(home_path + '/error_output.txt', 'a').push_application()  
-        self.logger = logbook.Logger(self.__class__.__name__)
-        logbook.set_datetime_format("local")
-        self.logger.info('Class Initialised!')
-        
-        #Finds the path of this module and uses the known directory tree of CX-ASAP to find the config file
-    
-        self.conf_path = pathlib.Path(os.path.abspath(__file__)).parent.parent.parent / 'conf.yaml'
-        
-        with open (self.conf_path, 'r') as f:
-            try: 
-                self.cfg = yaml.load(f)
-            except yaml.YAMLERROR as error:
-                self.logger.critical(f'Failed to open config file with {error}')
-                exit()
+        self.cfg = config.cfg
+        self.conf_path = config.conf_path
+        self.logger = config.logger
                 
-        if location == 'temp':
-            os.chdir(self.cfg['analysis_path'])
+        #if location == 'temp':
+            #os.chdir(self.cfg['System_Parameters']['analysis_path'])
             
-        if len(self.cfg['reference_plane']) != 3:
+        os.chdir(location)
+            
+        self.ref_plane = []
+        
+        for item in self.cfg['User_Parameters_Full_Pipeline']['Analysis_Requirements']['reference_plane']:
+            if item.isdigit():
+                self.ref_plane.append(int(item))
+        
+        if len(self.ref_plane) != 3:
             self.logger.critical('Reference plane in config file not understood by system')
     
     def sorted_properly(self, data):
@@ -74,6 +69,7 @@ class Rotation_Planes:
             for line in ins_file:
                 if 'CELL' in line:
                     split_line = line.split()
+                    
                         
         ref_parameters = ['ref_INS_a', 'ref_INS_b', 'ref_INS_c']
         
@@ -121,11 +117,11 @@ class Rotation_Planes:
             
             molecule_plane = [x, y, z]
             
-            dot_product = molecule_plane[0] * self.cfg['reference_plane'][0] + molecule_plane[1] * self.cfg['reference_plane'][1] + molecule_plane[2] * self.cfg['reference_plane'][2]
+            dot_product = molecule_plane[0] * self.ref_plane[0] + molecule_plane[1] * self.ref_plane[1] + molecule_plane[2] * self.ref_plane[2]
             
             normal_molecule = math.sqrt((molecule_plane[0] ** 2) + (molecule_plane[1] ** 2) + (molecule_plane[2] ** 2))
             
-            normal_reference = math.sqrt((self.cfg['reference_plane'][0] ** 2) + (self.cfg['reference_plane'][1] ** 2) + (self.cfg['reference_plane'][2] ** 2))
+            normal_reference = math.sqrt((self.ref_plane[0] ** 2) + (self.ref_plane[1] ** 2) + (self.ref_plane[2] ** 2))
             
             angle = math.acos(dot_product / (normal_molecule * normal_reference)) * (180 / math.pi)
             
@@ -139,14 +135,20 @@ class Rotation_Planes:
         #Helps independence
         
         if path == 'temp':
-            analysis = self.cfg['analysis_path']
-            results = self.cfg['current_results_path']
+            analysis = self.cfg['System_Parameters']['analysis_path']
+            results = self.cfg['System_Parameters']['current_results_path']
+            temperatures = os.path.join(self.cfg['System_Parameters']['results_path'], 'Just_Temps.csv')
+            temp_heading = '_diffrn_ambient_temperature'
         else:
             analysis = path
             results = path
+            temperatures = self.cfg['Extra_User_Parameters_Individual_Modules']['temperature_path']
+            temp_heading = self.cfg['Extra_User_Parameters_Individual_Modules']['temperature_heading']
         
         
         #Cycles through and calcualtes the rotation planes 
+        
+        index_2 = -1
         
         for index, run in enumerate(self.sorted_properly(os.listdir())):
                 if os.path.isdir(run):
@@ -157,8 +159,8 @@ class Rotation_Planes:
                             rot_angle = self.find_planes(item)
                             
                             #Make new data frame each time and append to previous file 
-                            
-                            self.df = pd.DataFrame({'Test Number': self.cfg['process_counter'], 'Structure':[index + 1], 'Distance':[(index + 1) * int(self.cfg['mapping_step_size'])], 'Rotation Angle': [rot_angle]}) 
+                            temp_df = pd.read_csv(temperatures)
+                            self.df = pd.DataFrame({'Structure':[index + 1], 'Temperature': temp_df.at[index_2, temp_heading], 'Rotation Angle': [rot_angle]}) 
                             os.chdir(results)
                             try:
                                 old_data = pd.read_csv('rotation_angles.csv')
@@ -167,45 +169,32 @@ class Rotation_Planes:
                             else:
                                 new_df = old_data.append(self.df)
                                 new_df.to_csv('rotation_angles.csv', index = None)
+                        if item == 'autoprocess.cif':
+                            index_2 += 1
                                 
                     os.chdir(analysis)
                         
         os.chdir(results)
         
         full_data = pd.read_csv('rotation_angles.csv')
-        
-        #Separates teh data frames by the test number and plots the graphs 
-        
-        separated_by_test_dfs = []
-        
-        tests = list(dict.fromkeys(full_data['Test Number']))
-
-        for item in tests:
-            condition = full_data['Test Number'] == item
-            separated_by_test_dfs.append(full_data[condition])
+        x = full_data['Temperature']
+        angle = full_data['Rotation Angle']
+        plt.scatter(x, angle, label = 'Angle')
+        plt.xlabel('Temperature(K)', fontsize = 12)
+        plt.ylabel('Angle($^\circ$C)', fontsize = 12)
+        plt.title('Rotation Angles')
+        plt.legend(fontsize = 12)
             
-        index = 0
+        figure = plt.gcf()
+        figure.set_size_inches(16,12)
             
-        for item in separated_by_test_dfs:
-            item.to_csv(str(tests[index]) + '_rotation_angles.csv', index = None)
-            
-            x = item['Distance']
-            angle = item['Rotation Angle']
-            plt.scatter(x, angle, label = 'Angle')
-            plt.xlabel('Distance($\mu$m)', fontsize = 12)
-            plt.ylabel('Angle($^\circ$C)', fontsize = 12)
-            plt.title(str(tests[index]) + ' Rotation Angles')
-            plt.legend(fontsize = 12)
-            
-            figure = plt.gcf()
-            figure.set_size_inches(16,12)
-            
-            plt.savefig(str(tests[index]) + '_rotation_angles.png', bbox_inches = 'tight', dpi = 100)
-            plt.clf()
-            
-            index += 1
+        plt.savefig('rotation_angles.png', bbox_inches = 'tight', dpi = 100)
+        plt.clf()
 
 
 if __name__ == "__main__":
+    from system.yaml_configuration import Nice_YAML_Dumper, Config
     analysis = Rotation_Planes(os.getcwd())
     analysis.rotation_planes(os.getcwd())
+else:
+    from .system.yaml_configuration import Nice_YAML_Dumper, Config

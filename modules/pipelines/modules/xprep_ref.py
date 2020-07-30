@@ -27,31 +27,18 @@ import re
 class XPREP:  
     def __init__(self, location = 'temp', home_path = os.getcwd()):
         
-        #Sets up the logbook - if being used in a pipeline, then the home_path can be pushed through, otherwise, the current working directory is taken to be the home_path
+        config = Config()
         
-        #Ideally this will be a parameter in the sys_conf.yaml file, but you need the logbook established before reading in the .yaml file..... 
-        
-        logbook.FileHandler(home_path + '/error_output.txt', 'a').push_application()  
-        self.logger = logbook.Logger(self.__class__.__name__)
-        logbook.set_datetime_format("local")
-        self.logger.info('Class Initialised!')
-        
-        #Finds the path of this module and uses the known directory tree of CX-ASAP to find the config file
-    
-        self.conf_path = pathlib.Path(os.path.abspath(__file__)).parent.parent.parent / 'conf.yaml'
-        
-        with open (self.conf_path, 'r') as f:
-            try: 
-                self.cfg = yaml.load(f)
-            except yaml.YAMLERROR as error:
-                self.logger.critical(f'Failed to open config file with {error}')
-                exit()
+        self.cfg = config.cfg
+        self.conf_path = config.conf_path
+        self.logger = config.logger
                 
-        if location == 'temp':
-            os.chdir(self.cfg['analysis_path'])
+        #if location == 'temp':
+            #os.chdir(self.cfg['System_Parameters']['analysis_path'])
+            
+        os.chdir(location)
                 
         
-    
     def sorted_properly(self, data):
         
         #This function sorts the files/folders properly (ie going 0, 1, 2... 10 instead of 0, 1, 10, 2... etc)
@@ -69,7 +56,7 @@ class XPREP:
             if os.path.isdir(run):
                 os.chdir(run)
                 xprep = subprocess.Popen(['xprep'], stdin = subprocess.PIPE, encoding='utf8')
-                xprep.stdin.write(self.cfg['xprep_file_name'] + '\n')
+                xprep.stdin.write(self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['xprep_file_name'] + '\n')
                 xprep.stdin.write('X\n')
                 xprep.stdin.write('Y\n')
                 xprep.stdin.write('P\n')
@@ -78,7 +65,7 @@ class XPREP:
                 xprep.stdin.write('1 0 0 0 1 0 0 0 1\n')
                 xprep.stdin.write('S\n')
                 xprep.stdin.write('I\n')
-                xprep.stdin.write(self.cfg['space_group'] + '\n')
+                xprep.stdin.write(self.cfg['System_Parameters']['space_group'] + '\n')
                 xprep.stdin.write('Y\n')
                 xprep.stdin.write('D\n')
                 xprep.stdin.write('S\n')
@@ -86,7 +73,7 @@ class XPREP:
                 xprep.stdin.write('\n')
                 xprep.stdin.write('E\n')
                 xprep.stdin.write('C\n')
-                xprep.stdin.write(self.cfg['chemical_formula'] + '\n')
+                xprep.stdin.write(self.cfg['User_Parameters_Full_Pipeline']['Crystal_Descriptions']['chemical_formula'] + '\n')
                 xprep.stdin.write('E\n')
                 xprep.stdin.write('F\n')
                 xprep.stdin.write('shelx\n')
@@ -114,9 +101,11 @@ class XPREP:
 #If the module is run independently, the class is initialised, and XPREP is run 
   
 if __name__ == "__main__":
+    from system.yaml_configuration import Config
     cell_analysis = XPREP(os.getcwd())
     cell_analysis.run_xprep()
-
+else:
+    from .system.yaml_configuration import Config
         
         
         

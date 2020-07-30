@@ -22,11 +22,12 @@
 
 #----------Required Modules----------#
 
-import os 
+import os
 import shutil
 import yaml
 import logbook
 import pathlib
+#from system.yaml_configuration import Nice_YAML_Dumper, Config
 
 #----------Class Definition----------#
 
@@ -35,22 +36,14 @@ class Setup():
         
         #Set up logbook and config file 
         
-        logbook.FileHandler(original_path + '/error_output.txt', 'a').push_application()  
-        self.logger = logbook.Logger(self.__class__.__name__)
-        logbook.set_datetime_format("local")
-        self.logger.info('Class Initialised!')
+        config = Config()
         
-        self.conf_path = pathlib.Path(os.path.abspath(__file__)).parent.parent.parent / 'conf.yaml'
-        
-        with open (self.conf_path, 'r') as f:
-            try: 
-                self.cfg = yaml.load(f)
-            except yaml.YAMLERROR as error:
-                self.logger.critical(f'Failed to open config file with {error}')
-                exit()
+        self.cfg = config.cfg
+        self.conf_path = config.conf_path
+        self.logger = config.logger
                 
         self.original_path = original_path
-        self.home = self.cfg['file_name'] + '_' + self.cfg['experiment_type'] + '_analysis'
+        self.home = self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['file_name'] + '_variable_temperature_analysis'
         self.tree_structure = ['analysis', 'ref', 'results', 'failed_autoprocessing']
         
         if pathlib.Path(self.original_path).stem == self.home:
@@ -63,11 +56,11 @@ class Setup():
         self.results_path = os.path.join(self.home_path, self.tree_structure[2])
         self.failed_path = os.path.join(self.home_path, self.tree_structure[3])    
                      
-        self.cfg['home_path'] = self.home_path
-        self.cfg['analysis_path'] = self.analysis_path
-        self.cfg['ref_path'] = self.ref_path
-        self.cfg['results_path'] = self.results_path
-        self.cfg['failed_path'] = self.failed_path  
+        self.cfg['System_Parameters']['home_path'] = self.home_path
+        self.cfg['System_Parameters']['analysis_path'] = self.analysis_path
+        self.cfg['System_Parameters']['ref_path'] = self.ref_path
+        self.cfg['System_Parameters']['results_path'] = self.results_path
+        self.cfg['System_Parameters']['failed_path'] = self.failed_path  
         
         with open (self.conf_path, 'w') as f:
             yaml.dump(self.cfg, f)
@@ -85,13 +78,13 @@ class Setup():
         #Move structure reference into the ref folder 
         
             try:
-                shutil.copy(self.cfg['reference_path'], self.ref_path)
+                shutil.copy(self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['reference_path'], self.ref_path)
             except FileNotFoundError as error:
                 self.logger.info(f'Failed to find reference file with error {error}')
                 
-            if self.cfg['second_reference_path'] != '':
+            if self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['second_reference_path'] != '':
                 try:
-                    shutil.copy(self.cfg['second_reference_path'], self.ref_path)
+                    shutil.copy(self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['second_reference_path'], self.ref_path)
                 except FileNotFoundError as error:
                     self.logger.info(f'Failed to find second reference file with error {error}')
 
@@ -101,7 +94,7 @@ class Setup():
             #Moves everything into the analysis folder
             
             for item in os.listdir():
-                if self.cfg['file_name'] in item:
+                if self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['file_name'] in item:
                     if 'analysis' not in item:
                         shutil.move(item, os.path.join(self.analysis_path, item))
                         
@@ -116,9 +109,6 @@ class Setup():
                     os.chdir(run)
                     if 'autoprocess.cif' not in os.listdir():
                         shutil.move(os.path.join(self.analysis_path, run), os.path.join(self.failed_path, run))
-                        self.logger.info('Synchrotron failed to autoprocess - run ' + run)
-                    else:
-                        self.logger.info('Synchrotron autoprocessed successfully - run ' + run)
                     os.chdir('..')
                     
             #This next part adds numbers so folders are correctly ordered
@@ -170,11 +160,14 @@ class Setup():
             
         os.mkdir(os.path.join(self.results_path, str(self.new_folder)))
         
-        self.cfg['current_results_path'] = (os.path.join(self.results_path, str(self.new_folder)))
-        self.cfg['ref_ins_path'] = os.path.join(self.ref_path, pathlib.Path(self.cfg['reference_path']).name)
+        self.cfg['System_Parameters']['current_results_path'] = (os.path.join(self.results_path, str(self.new_folder)))
+        self.cfg['System_Parameters']['ref_ins_path'] = os.path.join(self.ref_path, pathlib.Path(self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['reference_path']).name)
+        
+        if self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['second_reference_path'] != '':
+            self.cfg['System_Parameters']['second_ref_ins_path'] = os.path.join(self.ref_path, pathlib.Path(self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['second_reference_path']).name)
         
         with open (self.conf_path, 'w') as f:
-            yaml.dump(self.cfg, f)
+            yaml.dump(self.cfg, f, default_flow_style=False, Dumper=Nice_YAML_Dumper, sort_keys=False)
         
         #Gets rid of all .ins files from the analysis folders to make sure that the code runs ok later
         
@@ -193,6 +186,12 @@ class Setup():
 #If the code is called individually from the commandline, the below code runs the required functions 
                     
 if __name__ == "__main__":
+    
+    from system.yaml_configuration import Nice_YAML_Dumper, Config
+    
     initialisation = Setup()
     initialisation.Organise_Directory_Tree()
+else:
+    
+    from .system.yaml_configuration import Nice_YAML_Dumper, Config
         
