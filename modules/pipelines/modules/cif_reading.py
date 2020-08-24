@@ -68,6 +68,8 @@ class CIF_File:
             self.errors[item] = []
         self.data = pd.DataFrame() 
         self.temp_df = pd.DataFrame()
+        self.data2 = pd.DataFrame()
+        self.data3 = pd.DataFrame()
     
     def sorted_properly(self, data):
         
@@ -94,9 +96,11 @@ class CIF_File:
                     cif_file = os.path.join(os.getcwd(), files)
                     
                         
-                    temp_data, structures_in_cif_tmp, successful_positions_tmp = self.data_harvest(cif_file)
-                        
+                    temp_data, structures_in_cif_tmp, successful_positions_tmp, temp_bonds, temp_angles = self.data_harvest(cif_file)
+                    
                     self.data = self.data.append(temp_data)
+                    self.data2 = self.data2.append(temp_bonds)
+                    self.data3 = self.data3.append(temp_angles)
                     self.structures_in_cif.append(structures_in_cif_tmp)
                         
                     for item in successful_positions_tmp:
@@ -108,7 +112,7 @@ class CIF_File:
         with open (self.conf_path, 'w') as f:
             yaml.dump(self.cfg, f, default_flow_style=False, Dumper=Nice_YAML_Dumper, sort_keys=False)
 
-        return self.data
+        return self.data, self.data2
                     
                     
     def data_harvest(self, cif_file):                
@@ -119,6 +123,8 @@ class CIF_File:
             self.results[item] = []
             self.errors[item] = []
         self.temp_df = pd.DataFrame()
+        self.bond_df = pd.DataFrame()
+        self.angle_df = pd.DataFrame()
         
         #This notation is from the CifFile module and allows for easy searching of parameters
         
@@ -159,35 +165,97 @@ class CIF_File:
                 
                 #Check if an error value is present and separates the value and the error, converts the error to the correct decimal point, and assigns an error of 0 if no error present 
                 
-                if '(' in raw:
-                    temp = raw.split('(')
-                    temp2 = temp[1].strip(')')
-                    self.results[item].append(float(temp[0]))
-                    if '.' in raw:
-                        temp3 = temp[0].split('.')
-                        self.errors[item].append(int(temp2)*10**-(int(len(temp3[1]))))
+                if type(raw) != list:
+                    if '(' in raw:
+                        temp = raw.split('(')
+                        temp2 = temp[1].strip(')')
+                        self.results[item].append(float(temp[0]))
+                        if '.' in raw:
+                            temp3 = temp[0].split('.')
+                            self.errors[item].append(int(temp2)*10**-(int(len(temp3[1]))))
+                        else:
+                            self.errors[item].append(int(temp2))
+                    
                     else:
-                        self.errors[item].append(int(temp2))
-                
+                        self.results[item].append(float(raw))
+                        self.errors[item].append(0)
                 else:
-                    self.results[item].append(float(raw))
-                    self.errors[item].append(0)
+                    for param in raw:
+                        if '(' in param:
+                            temp = param.split('(')
+                            temp2 = temp[1].strip(')')
+                            self.results[item].append(float(temp[0]))
+                            if '.' in param:
+                                temp3 = temp[0].split('.')
+                                self.errors[item].append(int(temp2)*10**-(int(len(temp3[1]))))
+                            else:
+                                self.errors[item].append(int(temp2))
+                    
+                        else:
+                            try:
+                                self.results[item].append(float(param))
+                            except ValueError:
+                                self.results[item].append(param)
+                            self.errors[item].append(0)
          
         #Creates a column in the data frame to include the file name of the CIF
         
         self.temp_df['CIF File'] = self.cif_list
         
         #Adds all of the data to one data frame 
-            
+        
+        bond_paras = ['_geom_bond_atom_site_label_1', '_geom_bond_atom_site_label_2', '_geom_bond_distance']
+        angle_paras = ['_geom_angle_atom_site_label_1', '_geom_angle_atom_site_label_2', '_geom_angle_atom_site_label_3', '_geom_angle']
+           
         for para in self.search_items:
-            if len(self.results[para]) != 0:
+            if len(self.results[para]) == len(self.cif_list):
                 self.temp_df[para] = self.results[para]
                 self.temp_df[para + '_error'] = self.errors[para]
+            elif len(self.results[para]) != 0 and para in bond_paras:
+                self.bond_df[para] = self.results[para]
+                self.bond_df[para + '_error'] = self.errors[para]
+            elif len(self.results[para]) != 0 and para in angle_paras:
+                self.angle_df[para] = self.results[para]
+                self.angle_df[para + '_error'] = self.errors[para]
         
-        return self.temp_df, number_of_structures, data_blocks
+        longer_cif_list = []
+        longer_cif_list_2 = []
+        longer_data_blocks = []
+        longer_data_blocks_2 = []
+        if len(self.bond_df) != 0:
+            for item in self.cif_list:
+                i = 0
+                while i < (len(self.bond_df) / len(self.cif_list)):
+                    longer_cif_list.append(item)
+                    i += 1
+            for item in data_blocks:
+                i = 0
+                while i < (len(self.bond_df) / len(data_blocks)):
+                    longer_data_blocks.append(item)
+                    i += 1
+            self.bond_df['Cif File'] = longer_cif_list
+            self.bond_df['Data Block'] = longer_data_blocks
+        
+        if len(self.angle_df) != 0:
+            for item in self.cif_list:
+                i = 0
+                while i < (len(self.angle_df) / len(self.cif_list)):
+                    longer_cif_list_2.append(item)
+                    i += 1
+            for item in data_blocks:
+                i = 0
+                while i < (len(self.angle_df) / len(data_blocks)):
+                    longer_data_blocks_2.append(item)
+                    i += 1
+            self.angle_df['Cif File'] = longer_cif_list_2
+            self.angle_df['Data Block'] = longer_data_blocks_2
+        
+        return self.temp_df, number_of_structures, data_blocks, self.bond_df, self.angle_df
     
     def data_output(self):
         self.data.to_csv('CIF_Parameters.csv', index = None)
+        self.data2.to_csv('Bond_Lengths.csv', index = None)
+        self.data3.to_csv('Bond_Angles.csv', index = None)
         
     
 #If the module is run independently, the class is initialised, the data is collected, and printed as a .csv file
@@ -199,44 +267,4 @@ if __name__ == "__main__":
     analysis.data_output()
 else: 
     from .system.yaml_configuration import Nice_YAML_Dumper, Config
-
-        
-        
-        
-        
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-    
 

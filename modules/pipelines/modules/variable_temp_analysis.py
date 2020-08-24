@@ -57,11 +57,19 @@ class VT_Analysis:
                 self.vt_headers_x = item
                 continue 
     
-    def import_data(self, data):
+    def import_data(self, data, bonds=None, angles = None):
         
         #Simply a function to import data , with the file name for data specified 
         
         self.df = pd.read_csv(data)
+        if bonds != None:
+            self.df_bonds = pd.read_csv(bonds)
+        else:
+            self.df_bonds = pd.DataFrame()
+        if angles != None:
+            self.df_angles = pd.read_csv(angles)
+        else:
+            self.df_angles = pd.DataFrame()
         
     def graph(self, x, y, title, subplot, behaviour):
         
@@ -187,6 +195,113 @@ class VT_Analysis:
         plt.savefig('Variable_Temperature_Analysis.png', bbox_inches = 'tight', dpi = 100)
         plt.clf()
         
+
+        #Investigate bond-length changes
+        
+        if self.df_bonds.empty == False:
+        
+            bond_list = []
+            for index, item in enumerate(self.df_bonds['_geom_bond_atom_site_label_1']):
+                bond_list.append(item + '-' + self.df_bonds['_geom_bond_atom_site_label_2'][index])
+                
+            self.df_bonds['Bonds'] = bond_list
+            
+            
+            self.df_bonds.to_csv('Bond_Lengths.csv', index = None)
+            
+            self.discrete_bonds = list(dict.fromkeys(self.df_bonds['Bonds']))
+            separated_by_bond_dfs = []
+            
+            for item in self.discrete_bonds:
+                condition = self.df_bonds['Bonds'] == item
+                separated_by_bond_dfs.append(self.df_bonds[condition])
+            
+            temps_for_bonds = list(self.df['_diffrn_ambient_temperature'])
+            try:
+                os.mkdir('Individual_Bond_Length_Data')
+            except FileExistsError:
+                pass
+            
+            for index, item in enumerate(separated_by_bond_dfs):
+                try: 
+                    item['Temperature'] = temps_for_bonds
+                except ValueError:
+                    self.logger.info('something went wrong with bond_' + str(index))
+                else:
+
+                    item['Temperature'] = temps_for_bonds
+                    
+                    list_for_bond_names = list(item['Bonds'])
+                    
+                    os.chdir('Individual_Bond_Length_Data')
+                    item.to_csv('Bond_Lengths_' + list_for_bond_names[0] + '.csv', index = None)
+                    os.chdir('..')
+                    x = item['Temperature']
+                    y = item['_geom_bond_distance']
+                    plt.scatter(x, y, label = list_for_bond_names[0])
+                
+            plt.xlabel('Temperature (K)', fontsize = 12)
+            plt.ylabel('Length (Angstroms)')
+            plt.title('Bond Lengths')
+            plt.legend(fontsize = 12)
+            figure = plt.gcf()
+            figure.set_size_inches(16,12)
+            plt.savefig('Bond_Lengths.png', bbox_inches = 'tight', dpi = 100)
+            plt.clf()
+            
+            
+        #Investigate Angle Changes
+        
+        if self.df_angles.empty == False:
+            angle_list = []
+            for index, item in enumerate(self.df_angles['_geom_angle_atom_site_label_1']):
+                angle_list.append(item + '-' + self.df_angles['_geom_angle_atom_site_label_2'][index] + '-' + self.df_angles['_geom_angle_atom_site_label_3'][index])
+                
+            self.df_angles['Angles'] = angle_list
+            
+            self.df_angles.to_csv('Bond_Angles.csv', index = None)
+            
+            self.discrete_angles = list(dict.fromkeys(self.df_angles['Angles']))
+            separated_by_angle_dfs = []
+            
+            for item in self.discrete_angles:
+                condition = self.df_angles['Angles'] == item
+                separated_by_angle_dfs.append(self.df_angles[condition])
+                
+            temps_for_angles = list(self.df['_diffrn_ambient_temperature'])
+            
+            try:
+                os.mkdir('Individual_Angle_Data')
+            except FileExistsError:
+                pass
+            
+            for index, item in enumerate(separated_by_angle_dfs):
+                try:
+                    item['Temperature'] = temps_for_angles
+                except ValueError:
+                    self.logger.info('something went wrong with angle_' + str(index))
+                else:
+                    item['Temperature'] = temps_for_angles
+                    
+                    list_for_angle_names = list(item['Angles'])
+                    
+                    os.chdir('Individual_Angle_Data')
+                    item.to_csv('Angles_' + list_for_angle_names[0] + '.csv', index = None)
+                    os.chdir('..')
+                    x = item['Temperature']
+                    y = item['_geom_angle']
+                    plt.scatter(x, y, label = list_for_angle_names[0])
+            
+            plt.xlabel('Temperature (K)', fontsize = 12)
+            plt.ylabel('Angle (Degrees)')
+            plt.title('Angles')
+            plt.legend(fontsize = 12)
+            figure = plt.gcf()
+            figure.set_size_inches(16,12)
+            plt.savefig('Angles.png', bbox_inches = 'tight', dpi = 100)
+            plt.clf()        
+                
+        
         #Plot Statistics
         
         self.graph_full(self.df['_diffrn_ambient_temperature'], [self.df['_diffrn_reflns_av_R_equivalents'], self.df['_diffrn_measured_fraction_theta_full'], self.df['_refine_ls_R_factor_gt']],'Temperature(K)', 'Statistic', ['Rint', 'Completeness', 'R-Factor'], 'Overall Data Statistics')
@@ -201,7 +316,7 @@ class VT_Analysis:
 if __name__ == "__main__":
     from system.yaml_configuration import Nice_YAML_Dumper, Config
     vt_analysis = VT_Analysis(os.getcwd())
-    vt_analysis.import_data(vt_analysis.cfg['Extra_User_Parameters_Individual_Modules']['data_file_name'])
+    vt_analysis.import_data(vt_analysis.cfg['Extra_User_Parameters_Individual_Modules']['data_file_name'], vt_analysis.cfg['Extra_User_Parameters_Individual_Modules']['data_file_name_bonds'], vt_analysis.cfg['Extra_User_Parameters_Individual_Modules']['data_file_name_angles'])
     vt_analysis.analysis()
 else:
     from .system.yaml_configuration import Nice_YAML_Dumper, Config

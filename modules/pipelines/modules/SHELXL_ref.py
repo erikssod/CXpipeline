@@ -101,7 +101,7 @@ class SHELXL:
         for item in shift_param:
             shift.append(float(item.split(' ')[6]))
 
-        if statistics.mean(shift[-int(self.cfg['User_Parameters_Full_Pipeline']['Refinement_Configuration']['refinements_to_check']):]) <= float(self.cfg['User_Parameters_Full_Pipeline']['Refinement_Configuration']['tolerance']):
+        if abs(statistics.mean(shift[-int(self.cfg['User_Parameters_Full_Pipeline']['Refinement_Configuration']['refinements_to_check']):])) <= float(self.cfg['User_Parameters_Full_Pipeline']['Refinement_Configuration']['tolerance']):
             convergence = True
             self.logger.info('Refinement has converged')
         else:
@@ -141,11 +141,22 @@ class SHELXL:
                                 for line in lines:
                                     if end_flag == True and 'WGHT' in line:
                                         weight = line
-                                        weight_list_1.append(float(line.split(' ')[6]))
-                                        weight_list_2.append(float(line.split(' ')[12]))
+                                        
+                                        flag = 1
+                                        for item_2 in line.split():
+                                            if flag == 1:
+                                                if item_2 != 'WGHT' and item_2 != '':
+                                                    weight_list_1.append(float(item_2))
+                                                    flag += 1
+                                                    self.logger.info('weight 1= ' + item_2)
+                                            else:
+                                                if item_2 != 'WGHT' and item_2 != '':
+                                                    weight_list_2.append(float(item_2))
+                                                    self.logger.info('weight 2= ' + item_2)
+            
                                     elif 'END' in line:
                                         end_flag = True
-                                        
+                
                             with open (item, 'rt') as initial:
                                 lines = initial.readlines()
                             
