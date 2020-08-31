@@ -57,7 +57,7 @@ class VT_Analysis:
                 self.vt_headers_x = item
                 continue 
     
-    def import_data(self, data, bonds=None, angles = None):
+    def import_data(self, data, bonds=None, angles = None, torsions = None):
         
         #Simply a function to import data , with the file name for data specified 
         
@@ -70,6 +70,10 @@ class VT_Analysis:
             self.df_angles = pd.read_csv(angles)
         else:
             self.df_angles = pd.DataFrame()
+        if torsions != None:
+            self.df_torsions = pd.read_csv(torsions)
+        else:
+            self.df_torsions = pd.DataFrame()
         
     def graph(self, x, y, title, subplot, behaviour):
         
@@ -161,6 +165,105 @@ class VT_Analysis:
         
         return self.behaviour
       
+    def structural_analysis(self, df, components, structure_type, file_name, folder_name, y_unit):
+        if df.empty == False:
+            temps_for_structure = list(self.df['_diffrn_ambient_temperature'])
+            structure_list = []
+            reverse_structure_list = []
+            important_structures = pd.DataFrame()
+            important_structures_list = []
+            reverse_important_structures_list = []
+            headings = list(df)
+            
+            for index, item in enumerate(df[headings[0]]):
+                string = ''
+                reverse_string = ''
+                for column in headings:
+                    if column in components[0:-1]:
+                        string += ('-' + str(df[column][index]))
+                        
+                intermediate = string.strip('-').split('-')
+                
+                for i in range(len(intermediate) -1, -1, -1):
+                    reverse_string += (intermediate[i] + '-')
+                    
+                structure_list.append(string.strip('-'))
+                reverse_structure_list.append(reverse_string.strip('-'))
+            
+            df[structure_type] = structure_list
+            df['Reverse_' + structure_type] = reverse_structure_list
+            df.to_csv(file_name, index = None)
+            discrete_structures = list(dict.fromkeys(df[structure_type]))
+            reverse_discrete_structures = list(dict.fromkeys(df['Reverse_' + structure_type]))
+            separated_by_structure_dfs = []
+            important_separated_by_structure_dfs = []
+            
+            for index, item in enumerate(discrete_structures):
+                condition = df[structure_type] == item
+                condition2 = df['Reverse_' + structure_type] == item
+                df_double = [df[condition], df[condition2]]
+                separated_by_structure_dfs.append(pd.concat(df_double))
+                
+            try:
+                os.mkdir(folder_name)
+            except FileExistsError:
+                pass
+                
+            for index, item in enumerate(separated_by_structure_dfs):
+                del item['Reverse_' + structure_type]
+                try:
+                    item['Temperature'] = temps_for_structure
+                except ValueError:
+                    self.logger.info('Temperature data missing or does not match structural data - ' + str(index))
+                else:
+                    list_for_structure_names = list(item[structure_type])
+                    os.chdir(folder_name)
+                    item.to_csv(structure_type + '_' + list_for_structure_names[0] + '.csv', index = None)
+                    os.chdir('..')
+        
+            for item in discrete_structures:
+                for atom in self.cfg['User_Parameters_Full_Pipeline']['Analysis_Requirements']['atom_for_bond_analysis']:
+                    if atom in item:
+                        important_structures_list.append(item)
+                        
+            for item in reverse_discrete_structures:
+                for atom in self.cfg['User_Parameters_Full_Pipeline']['Analysis_Requirements']['atom_for_bond_analysis']:
+                    if atom in item:
+                        reverse_important_structures_list.append(item)
+            
+            for index, item in enumerate(important_structures_list):
+                condition = df[structure_type] == item
+                condition2 = df['Reverse_' + structure_type] == item
+                df_double = [df[condition], df[condition2]]
+                important_separated_by_structure_dfs.append(pd.concat(df_double))
+            
+            for index, item in enumerate(important_separated_by_structure_dfs):
+                try:
+                    item['Temperature'] = temps_for_structure
+                except ValueError:
+                    self.logger.info('Temperature data missing or does not match structural data for important structure - ')
+            
+            y_data = []
+            y_headers = []
+            
+            for index, item in enumerate(important_separated_by_structure_dfs):
+                del item['Reverse_' + structure_type]
+                
+                x_data = temps_for_structure
+                y_data.append(item[components[-1]])
+                y_headers.append(important_structures_list[index])
+        
+            self.graph_full(x_data, y_data, 'Temperature (K)', y_unit, y_headers, structure_type)
+            figure = plt.gcf()
+            figure.set_size_inches(16,12)
+            plt.savefig(structure_type + '.png', bbox_inches = 'tight', dpi = 100)
+            plt.clf()
+                
+            important_structures = pd.concat(important_separated_by_structure_dfs)
+            important_structures.to_csv('Important_' + file_name, index = None)
+                      
+            
+    
     def analysis(self):
        
        #Remove duplicates to define search condition to separate dataframes by their behaviour - this allows for the output graphs to be colour-coded 
@@ -198,109 +301,14 @@ class VT_Analysis:
 
         #Investigate bond-length changes
         
-        if self.df_bonds.empty == False:
+        bond_paras = ['_geom_bond_atom_site_label_1', '_geom_bond_atom_site_label_2', '_geom_bond_distance']
+        angle_paras = ['_geom_angle_atom_site_label_1', '_geom_angle_atom_site_label_2', '_geom_angle_atom_site_label_3', '_geom_angle']
+        torsion_paras = ['_geom_torsion_atom_site_label_1', '_geom_torsion_atom_site_label_2', '_geom_torsion_atom_site_label_3', '_geom_torsion_atom_site_label_4', '_geom_torsion']
         
-            bond_list = []
-            for index, item in enumerate(self.df_bonds['_geom_bond_atom_site_label_1']):
-                bond_list.append(item + '-' + self.df_bonds['_geom_bond_atom_site_label_2'][index])
-                
-            self.df_bonds['Bonds'] = bond_list
-            
-            
-            self.df_bonds.to_csv('Bond_Lengths.csv', index = None)
-            
-            self.discrete_bonds = list(dict.fromkeys(self.df_bonds['Bonds']))
-            separated_by_bond_dfs = []
-            
-            for item in self.discrete_bonds:
-                condition = self.df_bonds['Bonds'] == item
-                separated_by_bond_dfs.append(self.df_bonds[condition])
-            
-            temps_for_bonds = list(self.df['_diffrn_ambient_temperature'])
-            try:
-                os.mkdir('Individual_Bond_Length_Data')
-            except FileExistsError:
-                pass
-            
-            for index, item in enumerate(separated_by_bond_dfs):
-                try: 
-                    item['Temperature'] = temps_for_bonds
-                except ValueError:
-                    self.logger.info('something went wrong with bond_' + str(index))
-                else:
-
-                    item['Temperature'] = temps_for_bonds
-                    
-                    list_for_bond_names = list(item['Bonds'])
-                    
-                    os.chdir('Individual_Bond_Length_Data')
-                    item.to_csv('Bond_Lengths_' + list_for_bond_names[0] + '.csv', index = None)
-                    os.chdir('..')
-                    x = item['Temperature']
-                    y = item['_geom_bond_distance']
-                    plt.scatter(x, y, label = list_for_bond_names[0])
-                
-            plt.xlabel('Temperature (K)', fontsize = 12)
-            plt.ylabel('Length (Angstroms)')
-            plt.title('Bond Lengths')
-            plt.legend(fontsize = 12)
-            figure = plt.gcf()
-            figure.set_size_inches(16,12)
-            plt.savefig('Bond_Lengths.png', bbox_inches = 'tight', dpi = 100)
-            plt.clf()
-            
-            
-        #Investigate Angle Changes
         
-        if self.df_angles.empty == False:
-            angle_list = []
-            for index, item in enumerate(self.df_angles['_geom_angle_atom_site_label_1']):
-                angle_list.append(item + '-' + self.df_angles['_geom_angle_atom_site_label_2'][index] + '-' + self.df_angles['_geom_angle_atom_site_label_3'][index])
-                
-            self.df_angles['Angles'] = angle_list
-            
-            self.df_angles.to_csv('Bond_Angles.csv', index = None)
-            
-            self.discrete_angles = list(dict.fromkeys(self.df_angles['Angles']))
-            separated_by_angle_dfs = []
-            
-            for item in self.discrete_angles:
-                condition = self.df_angles['Angles'] == item
-                separated_by_angle_dfs.append(self.df_angles[condition])
-                
-            temps_for_angles = list(self.df['_diffrn_ambient_temperature'])
-            
-            try:
-                os.mkdir('Individual_Angle_Data')
-            except FileExistsError:
-                pass
-            
-            for index, item in enumerate(separated_by_angle_dfs):
-                try:
-                    item['Temperature'] = temps_for_angles
-                except ValueError:
-                    self.logger.info('something went wrong with angle_' + str(index))
-                else:
-                    item['Temperature'] = temps_for_angles
-                    
-                    list_for_angle_names = list(item['Angles'])
-                    
-                    os.chdir('Individual_Angle_Data')
-                    item.to_csv('Angles_' + list_for_angle_names[0] + '.csv', index = None)
-                    os.chdir('..')
-                    x = item['Temperature']
-                    y = item['_geom_angle']
-                    plt.scatter(x, y, label = list_for_angle_names[0])
-            
-            plt.xlabel('Temperature (K)', fontsize = 12)
-            plt.ylabel('Angle (Degrees)')
-            plt.title('Angles')
-            plt.legend(fontsize = 12)
-            figure = plt.gcf()
-            figure.set_size_inches(16,12)
-            plt.savefig('Angles.png', bbox_inches = 'tight', dpi = 100)
-            plt.clf()        
-                
+        self.structural_analysis(self.df_bonds, bond_paras, 'Bonds', 'Bond_Lengths.csv', 'Individual_Bond_Length_Data', 'Length (Angstroms)')
+        self.structural_analysis(self.df_angles, angle_paras, 'Angles', 'Bond_Angles.csv', 'Individual_Angle_Data', 'Angle (Degrees)')
+        self.structural_analysis(self.df_torsions, torsion_paras, 'Torsions', 'Bond_Torsions.csv', 'Individual_Torsion_Data', 'Angle (Degrees)')
         
         #Plot Statistics
         
@@ -316,7 +324,7 @@ class VT_Analysis:
 if __name__ == "__main__":
     from system.yaml_configuration import Nice_YAML_Dumper, Config
     vt_analysis = VT_Analysis(os.getcwd())
-    vt_analysis.import_data(vt_analysis.cfg['Extra_User_Parameters_Individual_Modules']['data_file_name'], vt_analysis.cfg['Extra_User_Parameters_Individual_Modules']['data_file_name_bonds'], vt_analysis.cfg['Extra_User_Parameters_Individual_Modules']['data_file_name_angles'])
+    vt_analysis.import_data(vt_analysis.cfg['Extra_User_Parameters_Individual_Modules']['data_file_name'], vt_analysis.cfg['Extra_User_Parameters_Individual_Modules']['data_file_name_bonds'], vt_analysis.cfg['Extra_User_Parameters_Individual_Modules']['data_file_name_angles'], vt_analysis.cfg['Extra_User_Parameters_Individual_Modules']['data_file_name_torsions'])
     vt_analysis.analysis()
 else:
     from .system.yaml_configuration import Nice_YAML_Dumper, Config
