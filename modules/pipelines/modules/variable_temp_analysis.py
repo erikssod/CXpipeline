@@ -167,7 +167,6 @@ class VT_Analysis:
       
     def structural_analysis(self, df, components, structure_type, file_name, folder_name, y_unit):
         if df.empty == False:
-            temps_for_structure = list(self.df['_diffrn_ambient_temperature'])
             structure_list = []
             reverse_structure_list = []
             important_structures = pd.DataFrame()
@@ -192,6 +191,16 @@ class VT_Analysis:
             
             df[structure_type] = structure_list
             df['Reverse_' + structure_type] = reverse_structure_list
+            
+            cif_list = self.df['CIF File'].values.tolist()
+            temperature_list = self.df['_diffrn_ambient_temperature'].values.tolist()
+            new_temp_list = []
+            for i, item in enumerate(cif_list):
+                for j, value in enumerate(df['Cif File']):
+                    if item == value:
+                        new_temp_list.append(temperature_list[i])
+
+            df['Temperature'] = new_temp_list
             df.to_csv(file_name, index = None)
             discrete_structures = list(dict.fromkeys(df[structure_type]))
             reverse_discrete_structures = list(dict.fromkeys(df['Reverse_' + structure_type]))
@@ -211,15 +220,10 @@ class VT_Analysis:
                 
             for index, item in enumerate(separated_by_structure_dfs):
                 del item['Reverse_' + structure_type]
-                try:
-                    item['Temperature'] = temps_for_structure
-                except ValueError:
-                    self.logger.info('Temperature data missing or does not match structural data - ' + str(index))
-                else:
-                    list_for_structure_names = list(item[structure_type])
-                    os.chdir(folder_name)
-                    item.to_csv(structure_type + '_' + list_for_structure_names[0] + '.csv', index = None)
-                    os.chdir('..')
+                list_for_structure_names = list(item[structure_type])
+                os.chdir(folder_name)
+                item.to_csv(structure_type + '_' + list_for_structure_names[0] + '.csv', index = None)
+                os.chdir('..')
         
             for item in discrete_structures:
                 for atom in self.cfg['User_Parameters_Full_Pipeline']['Analysis_Requirements']['atom_for_bond_analysis']:
@@ -236,20 +240,15 @@ class VT_Analysis:
                 condition2 = df['Reverse_' + structure_type] == item
                 df_double = [df[condition], df[condition2]]
                 important_separated_by_structure_dfs.append(pd.concat(df_double))
-            
-            for index, item in enumerate(important_separated_by_structure_dfs):
-                try:
-                    item['Temperature'] = temps_for_structure
-                except ValueError:
-                    self.logger.info('Temperature data missing or does not match structural data for important structure - ')
-            
+             
             y_data = []
             y_headers = []
             
             for index, item in enumerate(important_separated_by_structure_dfs):
                 del item['Reverse_' + structure_type]
                 
-                x_data = temps_for_structure
+                #x_data = temps_for_structure
+                x_data = item['Temperature']
                 y_data.append(item[components[-1]])
                 y_headers.append(important_structures_list[index])
         
