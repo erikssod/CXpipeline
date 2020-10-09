@@ -1,6 +1,10 @@
 User_Parameters_Full_Pipeline:
   Analysis_Requirements:
-    atoms_for_rotation: C1 C2 C3 C4 C5 C6 C7 C8 C9 C10 C11 C12 C13
+    atoms_for_rotation: C1 C2 C3
+    atom_for_bond_analysis:
+    - Fe1
+    - Fe2
+    - Fe3
     cell_parameters:
     - _cell_length_a
     - _cell_length_b
@@ -13,35 +17,49 @@ User_Parameters_Full_Pipeline:
     - _diffrn_measured_fraction_theta_full
     - _diffrn_ambient_temperature
     - _refine_ls_R_factor_gt
+    - _geom_bond_atom_site_label_1
+    - _geom_bond_atom_site_label_2
+    - _geom_bond_distance
+    - _geom_angle_atom_site_label_1
+    - _geom_angle_atom_site_label_2
+    - _geom_angle_atom_site_label_3
+    - _geom_angle
     reference_plane: '100'
   Experiment_Configuration:
-    beamline: MX2
+    beamline: MX1
     wavelength: '0.710920989513'
   Crystal_Descriptions:
-    chemical_formula: C16 H14 Cl N5 O7
-    crystal_colour: colourless
-    crystal_habit: needle
-    max_crystal_dimension: '2'
+    chemical_formula: Cu C10 H12 Cl2 O4
+    crystal_colour: blue
+    crystal_habit: plate
+    max_crystal_dimension: '0.5'
     middle_crystal_dimension: '0.1'
-    min_crystal_dimension: '0.005'
+    min_crystal_dimension: '0.05'
   File_Names_And_Paths:
     file_name: Co3L3hmtDMSO
-    reference_path: /home/amy/Documents/analysis/Akshay_Old/Akshay/cobalt_ref/ref.ins
-    second_reference_path: ''
-    GXPARM_first_ref_path: /home/amy/Documents/analysis/Akshay/GXPARM1.XDS
-    GXPARM_second_ref_path: ''
+    reference_path: /home/amy/Documents/analysis/testing_two_ref/cobalt_ref_1/ref.ins
+    second_reference_path: /home/amy/Documents/analysis/testing_two_ref/cobalt_ref_2/ref.ins
+    lowsymm_first_ref_path: /home/amy/Documents/analysis/testing_two_ref/cobalt_ref_1/XDS_ASCII.HKL_p1
+    lowsymm_second_ref_path: /home/amy/Documents/analysis/testing_two_ref/cobalt_ref_2/XDS_ASCII.HKL_p1
+    hsymm_first_ref_path: /home/amy/Documents/analysis/testing_two_ref/cobalt_ref_1/XDS_ASCII.HKL_hsymm
+    hsymm_second_ref_path: /home/amy/Documents/analysis/testing_two_ref/cobalt_ref_2/XDS_ASCII.HKL_hsymm
     xprep_file_name: XDS_ASCII.HKL_p1
   Refinement_Configuration:
     refinements_to_check: 8
-    tolerance: 0.001
+    tolerance: 0.1
 
 Extra_User_Parameters_Individual_Modules:
   data_file_name: CIF_Parameters.csv
+  data_file_name_bonds: Bond_Lengths.csv
+  data_file_name_angles: Bond_Angles.csv
+  data_file_name_torsions: Bond_Torsions.csv
   use_custom_headings: 'no'
   user_headings_x: ''
   user_headings_y: ''
   temperature_path: ''
   temperature_heading: ''
+  XDS_ASCII_file1: ''
+  XDS_ASCII_file2: ''
 
 Instrument_Parameters:
   MX1_absorp_correction: SADABS
@@ -65,66 +83,64 @@ Instrument_Parameters:
 
 System_Parameters:
   Structures_in_each_CIF:
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
-  - 8
+  - 27
   Successful_Positions:
-  - '1'
-  - '2'
-  - '3'
-  - '4'
-  - '5'
-  - '6'
-  - '7'
-  - '8'
-  - '1'
-  - '2'
-  - '3'
-  - '4'
-  - '5'
-  - '6'
-  - '7'
-  - '8'
-  analysis_path: /home/amy/Documents/analysis/Akshay/Co3L3hmtDMSO_variable_temperature_analysis/analysis
-  first_analysis_path: /home
-  second_analysis_path: /home
-  current_results_path: /home/amy/Documents/analysis/Akshay/Co3L3hmtDMSO_variable_temperature_analysis/results/1
-  failed_path: /home/amy/Documents/analysis/Akshay/Co3L3hmtDMSO_variable_temperature_analysis/failed_autoprocessing
-  home_path: /home/amy/Documents/analysis/Akshay/Co3L3hmtDMSO_variable_temperature_analysis
-  ref_INS_a: 8.767
+  - Stf20at05a_01_100_00
+  - Stf20at05a_02_110_00
+  - Stf20at05a_03_120_00
+  - Stf20at05a_04_130_00
+  - Stf20at05a_05_140_00
+  - Stf20at05a_06_150_00
+  - Stf20at05a_07_160_00
+  - Stf20at05a_08_170_00
+  - Stf20at05a_09_180_00
+  - Stf20at05a_10_190_00
+  - Stf20at05a_11_200_00
+  - Stf20at05a_12_210_00
+  - Stf20at05a_13_220_00
+  - Stf20at05a_14_230_00
+  - Stf20at05a_15_240_00
+  - Stf20at05a_16_250_00
+  - Stf20at05a_17_260_00
+  - Stf20at05a_18_270_00
+  - Stf20at05a_19_280_00
+  - Stf20at05a_20_290_00
+  - Stf20at05a_21_300_00
+  - Stf20at05a_22_310_00
+  - Stf20at05a_23_320_00
+  - Stf20at05a_24_330_00
+  - Stf20at05a_25_340_00
+  - Stf20at05a_40_490_00
+  - Stf20at05a_41_500_00
+  analysis_path: /home/amy/Documents/analysis/testing_two_ref/Co3L3hmtDMSO_variable_temperature_analysis/analysis
+  current_results_path: /home/amy/Documents/analysis/testing_two_ref/Co3L3hmtDMSO_variable_temperature_analysis/results/1
+  current_results_path_ref1: /home/amy/Documents/analysis/testing_two_ref/Co3L3hmtDMSO_variable_temperature_analysis/results/1/first_reference
+  current_results_path_ref2: /home/amy/Documents/analysis/testing_two_ref/Co3L3hmtDMSO_variable_temperature_analysis/results/1/second_reference
+  failed_path: /home/amy/Documents/analysis/testing_two_ref/Co3L3hmtDMSO_variable_temperature_analysis/failed_autoprocessing
+  home_path: /home/amy/Documents/analysis/testing_two_ref/Co3L3hmtDMSO_variable_temperature_analysis
+  ref_INS_a: 8.883
   ref_INS_alpha: 90.0
-  ref_INS_b: 8.1848
-  ref_INS_beta: 95.453
-  ref_INS_c: 11.9883
+  ref_INS_b: 40.8749
+  ref_INS_beta: 90.0
+  ref_INS_c: 38.896
   ref_INS_gamma: 90.0
   ref_INS_volume: 14122.8161906832
-  ref_INS_a_2: 8.1872
+  ref_INS_a_2: 8.883
   ref_INS_alpha_2: 90.0
-  ref_INS_b_2: 8.1872
+  ref_INS_b_2: 40.8749
   ref_INS_beta_2: 90.0
-  ref_INS_c_2: 22.1552
-  ref_INS_gamma_2: 120.0
+  ref_INS_c_2: 38.896
+  ref_INS_gamma_2: 90.0
   ref_INS_volume_2: 14122.8161906832
-  ref_ins_path: /home/amy/Documents/analysis/shelxl_tutorial/work/ref.ins
-  second_ref_ins_path: ''
-  ref_path: /home/amy/Documents/analysis/Akshay/Co3L3hmtDMSO_variable_temperature_analysis/ref
-  results_path: /home/amy/Documents/analysis/Akshay/Co3L3hmtDMSO_variable_temperature_analysis/results
-  second_space_group: ''
-  space_group: Ia
-  transformation_matrix:
-  - - 0.5054468283311669
-    - 0.4984906313443418
-    - 0.5026086580011463
-  - - -0.49890550205539613
-    - 0.5043463067437655
-    - -0.5025305713825022
-  - - -1.9612412682718796
-    - 0.028465430961250246
-    - 1.0129704315646404
-  space_group_2: R-3c
+  ref_ins_path: /home/amy/Documents/analysis/testing_two_ref/Co3L3hmtDMSO_variable_temperature_analysis/ref/ref.ins
+  second_ref_ins_path: /home/amy/Documents/analysis/testing_two_ref/Co3L3hmtDMSO_variable_temperature_analysis/ref2/ref.ins
+  ref_path: /home/amy/Documents/analysis/testing_two_ref/Co3L3hmtDMSO_variable_temperature_analysis/ref
+  second_ref_path: /home/amy/Documents/analysis/testing_two_ref/Co3L3hmtDMSO_variable_temperature_analysis/ref2
+  results_path: /home/amy/Documents/analysis/testing_two_ref/Co3L3hmtDMSO_variable_temperature_analysis/results
+  second_space_group: C222(1)
+  space_group: C222(1)
+  hsymm_matrix: '-1.0 -0.0 -0.0 -1.0 2.0 0.0 -0.0 -0.0 -1.0 '
+  neutral_matrix: 1 0 0 0 1 0 0 0 1
+  first_analysis_path: /home/amy/Documents/analysis/testing_two_ref/Co3L3hmtDMSO_variable_temperature_analysis/analysis/first_reference
+  second_analysis_path: /home/amy/Documents/analysis/testing_two_ref/Co3L3hmtDMSO_variable_temperature_analysis/analysis/second_reference
+  transformation_matrix: '-1.0 0.0 -0.0 -0.5 0.5 0.0 0.1 0.0 -1.0 '
