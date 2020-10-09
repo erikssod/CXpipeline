@@ -24,6 +24,11 @@ User_Parameters_Full_Pipeline:
     - _geom_angle_atom_site_label_2
     - _geom_angle_atom_site_label_3
     - _geom_angle
+    - _geom_torsion_atom_site_label_1
+    - _geom_torsion_atom_site_label_2
+    - _geom_torsion_atom_site_label_3
+    - _geom_torsion_atom_site_label_4
+    - _geom_torsion
     reference_plane: '100'
   Experiment_Configuration:
     beamline: MX1
