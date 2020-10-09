@@ -26,7 +26,7 @@ import pandas as pd
 #----------Class Definition----------#
 
 class CIF_Combine:  
-    def __init__(self, location = 'temp', home_path = os.getcwd()):
+    def __init__(self, location = os.getcwd(), pipeline_flag = True):
         
         config = Config()
         
@@ -35,11 +35,11 @@ class CIF_Combine:
         self.logger = config.logger
         
         self.location = location
+        self.flag = pipeline_flag
         
         #if self.location == 'temp':
             #os.chdir(self.cfg['System_Parameters']['analysis_path'])
-            
-        os.chdir(location)
+        
     
     def sorted_properly(self, data):
         
@@ -122,11 +122,13 @@ class CIF_Combine:
                 
             os.rename('edited.cif', file_name)
             
-    def combine(self):
+    def combine(self, results_location):
         
         #This function compiles the cifs into one place and runs the previous two functions 
         
-        index_2 = 0
+        index_2 = -1
+        
+        os.chdir(self.location)
         
         for index, run in enumerate(self.sorted_properly(os.listdir())):
             if os.path.isdir(run):
@@ -134,7 +136,7 @@ class CIF_Combine:
                 for item in self.sorted_properly(os.listdir()):
                     if item.endswith('.cif') and 'autoprocess' not in item:
 
-                        if self.location == 'temp': 
+                        if self.flag == True: 
                             temperatures = os.path.join(self.cfg['System_Parameters']['results_path'], 'Just_Temps.csv')
                             temp_heading = '_diffrn_ambient_temperature'
                         else:
@@ -147,20 +149,20 @@ class CIF_Combine:
                         self.datablock_naming(item,index)
                         self.finalise_parameters(item, index, current_temp)
                         
-                        if self.location == 'temp':
-                            with open (os.path.join(self.cfg['System_Parameters']['current_results_path'], '_all_cifs.cif'), 'a') as combined_cif:
-                                try:
-                                    with open (item) as single_cif:
-                                        combined_cif.write(single_cif.read())
-                                except FileNotFoundError as error:
-                                    self.logger.info('Stuff messed up :(')
-                        else:
-                            with open (os.path.join(self.location, 'all_cifs.cif'), 'a') as combined_cif:
-                                try:
-                                    with open (item) as single_cif:
-                                        combined_cif.write(single_cif.read())
-                                except FileNotFoundError as error:
-                                    self.logger.info('Stuff messed up :(')
+                        #if self.location == 'temp':
+                        with open (os.path.join(results_location, pathlib.Path(results_location).name + '_all_cifs.cif'), 'a') as combined_cif:
+                            try:
+                                with open (item) as single_cif:
+                                    combined_cif.write(single_cif.read())
+                            except FileNotFoundError as error:
+                                self.logger.info('Stuff messed up :(')
+                        #else:
+                            #with open (os.path.join(self.location, 'all_cifs.cif'), 'a') as combined_cif:
+                                #try:
+                                    #with open (item) as single_cif:
+                                        #combined_cif.write(single_cif.read())
+                                #except FileNotFoundError as error:
+                                    #self.logger.info('Stuff messed up :(')
                     if item == 'autoprocess.cif':
                         index_2 += 1
                         
@@ -170,8 +172,8 @@ class CIF_Combine:
   
 if __name__ == "__main__":
     from system.yaml_configuration import Nice_YAML_Dumper, Config
-    combine = CIF_Combine(os.getcwd())
-    combine.combine()
+    combine = CIF_Combine(pipeline_flag = False)
+    combine.combine(os.getcwd())
 else:
     from .system.yaml_configuration import Nice_YAML_Dumper, Config
 

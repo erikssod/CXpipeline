@@ -29,18 +29,19 @@ import pathlib
 
 class Rotation_Planes:
     
-    def __init__(self, location = 'temp', home_path = os.getcwd()):
+    def __init__(self, location = os.getcwd()):
 
         config = Config()
         
         self.cfg = config.cfg
         self.conf_path = config.conf_path
         self.logger = config.logger
+        self.location = location
                 
         #if location == 'temp':
             #os.chdir(self.cfg['System_Parameters']['analysis_path'])
             
-        os.chdir(location)
+        #os.chdir(location)
             
         self.ref_plane = []
         
@@ -130,25 +131,23 @@ class Rotation_Planes:
                 
             return angle    
         
-    def rotation_planes(self, path = 'temp'):
+    def rotation_planes(self, results_path):
         
         #Helps independence
         
-        if path == 'temp':
-            analysis = self.cfg['System_Parameters']['analysis_path']
-            results = self.cfg['System_Parameters']['current_results_path']
-            temperatures = os.path.join(self.cfg['System_Parameters']['results_path'], 'Just_Temps.csv')
-            temp_heading = '_diffrn_ambient_temperature'
-        else:
-            analysis = path
-            results = path
+        if results_path == os.getcwd():
             temperatures = self.cfg['Extra_User_Parameters_Individual_Modules']['temperature_path']
             temp_heading = self.cfg['Extra_User_Parameters_Individual_Modules']['temperature_heading']
+        else:
+            temperatures = os.path.join(self.cfg['System_Parameters']['results_path'], 'Just_Temps.csv')
+            temp_heading = '_diffrn_ambient_temperature'
         
         
         #Cycles through and calcualtes the rotation planes 
         
         index_2 = -1
+        
+        os.chdir(self.location)
         
         for index, run in enumerate(self.sorted_properly(os.listdir())):
                 if os.path.isdir(run):
@@ -160,8 +159,9 @@ class Rotation_Planes:
                             
                             #Make new data frame each time and append to previous file 
                             temp_df = pd.read_csv(temperatures)
-                            self.df = pd.DataFrame({'Structure':[index + 1], 'Temperature': temp_df.at[index_2, temp_heading], 'Rotation Angle': [rot_angle]}) 
-                            os.chdir(results)
+                            self.df = pd.DataFrame({'Structure':[index + 1], 'Temperature': temp_df.at[index_2, temp_heading], 'Rotation Angle': [rot_angle]})
+                            current_folder = os.getcwd()
+                            os.chdir(results_path)
                             try:
                                 old_data = pd.read_csv('rotation_angles.csv')
                             except FileNotFoundError:
@@ -172,9 +172,10 @@ class Rotation_Planes:
                         if item == 'autoprocess.cif':
                             index_2 += 1
                                 
-                    os.chdir(analysis)
+                    os.chdir(current_folder)
+                    os.chdir('..')
                         
-        os.chdir(results)
+        os.chdir(results_path)
         
         full_data = pd.read_csv('rotation_angles.csv')
         x = full_data['Temperature']
@@ -194,7 +195,7 @@ class Rotation_Planes:
 
 if __name__ == "__main__":
     from system.yaml_configuration import Nice_YAML_Dumper, Config
-    analysis = Rotation_Planes(os.getcwd())
+    analysis = Rotation_Planes()
     analysis.rotation_planes(os.getcwd())
 else:
     from .system.yaml_configuration import Nice_YAML_Dumper, Config

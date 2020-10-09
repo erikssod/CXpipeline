@@ -29,13 +29,15 @@ import statistics
 #----------Class Definition----------#
 
 class SHELXL:  
-    def __init__(self, location = 'temp', home_path = os.getcwd()):
+    def __init__(self, reference, location = os.getcwd()):
         
         config = Config()
         
         self.cfg = config.cfg
         self.conf_path = config.conf_path
         self.logger = config.logger
+        self.location = location 
+        self.reference = reference
                 
         #if location == 'temp':
             #os.chdir(self.cfg['System_Parameters']['analysis_path'])
@@ -44,8 +46,8 @@ class SHELXL:
             #with open (self.conf_path, 'w') as f:
                 #yaml.dump(self.cfg, f, default_flow_style=False, Dumper=Nice_YAML_Dumper, sort_keys=False)
                 
-        os.chdir(location)
-        if location == os.getcwd():
+        #os.chdir(location)
+        if self.location == os.getcwd():
             self.cfg['System_Parameters']['ref_ins_path'] = self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['reference_path']
             with open (self.conf_path, 'w') as f:
                 yaml.dump(self.cfg, f, default_flow_style=False, Dumper=Nice_YAML_Dumper, sort_keys=False)
@@ -63,7 +65,7 @@ class SHELXL:
     
     def import_refinement(self, file_name):
         
-        with open (self.cfg['System_Parameters']['ref_ins_path'], 'rt') as reference:
+        with open (self.reference, 'rt') as reference:
             structure = reference.read()
         ref_x = re.search('LATT', structure)
         ref_y = re.search('END', structure)
@@ -110,9 +112,11 @@ class SHELXL:
         
         return convergence, shift
         
-    def run_shelxl(self, path = 'temp'):
+    def run_shelxl(self, results_path = os.getcwd()):
         
         #This function goes through all runs and runs xprep for a known structure 
+        
+        os.chdir(self.location)
         
         for index, run in enumerate(self.sorted_properly(os.listdir())):
             if os.path.isdir(run):
@@ -203,12 +207,9 @@ class SHELXL:
                 #Helps independence
         
                         current = os.getcwd()
+                        
+                        os.chdir(results_path)
         
-                        if path == 'temp':
-                            os.chdir(self.cfg['System_Parameters']['current_results_path'])
-                        else:
-                            os.chdir('..')
-                    
                         x1 = list(range(1,len(weight_list_1) + 1))
                         x2 = list(range(1, len(refinement_shifts) + 1))
                         
@@ -251,8 +252,8 @@ class SHELXL:
   
 if __name__ == "__main__":
     from system.yaml_configuration import Nice_YAML_Dumper, Config
-    refinement = SHELXL(os.getcwd())
-    refinement.run_shelxl(os.getcwd())
+    refinement = SHELXL()
+    refinement.run_shelxl()
 else:
     from .system.yaml_configuration import Nice_YAML_Dumper, Config
 

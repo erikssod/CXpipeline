@@ -233,10 +233,18 @@ class CIF_File:
                 self.torsion_df[para] = self.results[para]
                 self.torsion_df[para + '_error'] = self.errors[para]
         
-        
-        self.bond_df['Cif File'], self.bond_df['Data Block'] = self.generate_cif_list(self.bond_df)
-        self.angle_df['Cif File'], self.angle_df['Data Block'] = self.generate_cif_list(self.angle_df)
-        self.torsion_df['Cif File'], self.torsion_df['Data Block'] = self.generate_cif_list(self.torsion_df)
+        try:
+            self.bond_df['Cif File'], self.bond_df['Data Block'] = self.generate_cif_list(self.bond_df)
+        except:
+            pass
+        try:
+            self.angle_df['Cif File'], self.angle_df['Data Block'] = self.generate_cif_list(self.angle_df)
+        except:
+            pass
+        try:    
+            self.torsion_df['Cif File'], self.torsion_df['Data Block'] = self.generate_cif_list(self.torsion_df)
+        except:
+            pass
         
         return self.temp_df, number_of_structures, self.data_blocks, self.bond_df, self.angle_df, self.torsion_df
     

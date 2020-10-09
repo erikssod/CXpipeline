@@ -25,7 +25,7 @@ import re
 #----------Class Definition----------#
 
 class XPREP:  
-    def __init__(self, location = 'temp', home_path = os.getcwd()):
+    def __init__(self, location = os.getcwd()):
         
         config = Config()
         
@@ -33,9 +33,6 @@ class XPREP:
         self.conf_path = config.conf_path
         self.logger = config.logger
                 
-        #if location == 'temp':
-            #os.chdir(self.cfg['System_Parameters']['analysis_path'])
-            
         os.chdir(location)
                 
         
@@ -48,7 +45,7 @@ class XPREP:
         
         return sorted(data, key=alphanum_key)
     
-    def run_xprep(self):
+    def run_xprep(self, matrix):
         
         #This function goes through all runs and runs xprep for a known structure 
         
@@ -62,7 +59,7 @@ class XPREP:
                 xprep.stdin.write('P\n')
                 xprep.stdin.write('U\n')
                 xprep.stdin.write('O\n')
-                xprep.stdin.write('1 0 0 0 1 0 0 0 1\n')
+                xprep.stdin.write(matrix)
                 xprep.stdin.write('S\n')
                 xprep.stdin.write('I\n')
                 xprep.stdin.write(self.cfg['System_Parameters']['space_group'] + '\n')
@@ -102,8 +99,8 @@ class XPREP:
   
 if __name__ == "__main__":
     from system.yaml_configuration import Config
-    cell_analysis = XPREP(os.getcwd())
-    cell_analysis.run_xprep()
+    cell_analysis = XPREP()
+    cell_analysis.run_xprep(cell_analysis.cfg['System_Parameters']['neutral_matrix'])
 else:
     from .system.yaml_configuration import Config
         

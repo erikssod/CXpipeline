@@ -62,8 +62,11 @@ class Setup():
         self.cfg['System_Parameters']['results_path'] = self.results_path
         self.cfg['System_Parameters']['failed_path'] = self.failed_path  
         
+        #with open (self.conf_path, 'w') as f:
+            #yaml.dump(self.cfg, f)
+            
         with open (self.conf_path, 'w') as f:
-            yaml.dump(self.cfg, f)
+            yaml.dump(self.cfg, f, default_flow_style=False, Dumper=Nice_YAML_Dumper, sort_keys=False)
         
     def Organise_Directory_Tree(self):
         
@@ -81,13 +84,7 @@ class Setup():
                 shutil.copy(self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['reference_path'], self.ref_path)
             except FileNotFoundError as error:
                 self.logger.info(f'Failed to find reference file with error {error}')
-                
-            if self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['second_reference_path'] != '':
-                try:
-                    shutil.copy(self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['second_reference_path'], self.ref_path)
-                except FileNotFoundError as error:
-                    self.logger.info(f'Failed to find second reference file with error {error}')
-
+    
             os.chdir('..')
         
             
@@ -163,8 +160,8 @@ class Setup():
         self.cfg['System_Parameters']['current_results_path'] = (os.path.join(self.results_path, str(self.new_folder)))
         self.cfg['System_Parameters']['ref_ins_path'] = os.path.join(self.ref_path, pathlib.Path(self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['reference_path']).name)
         
-        if self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['second_reference_path'] != '':
-            self.cfg['System_Parameters']['second_ref_ins_path'] = os.path.join(self.ref_path, pathlib.Path(self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['second_reference_path']).name)
+        #if self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['second_reference_path'] != '':
+            #self.cfg['System_Parameters']['second_ref_ins_path'] = os.path.join(self.ref_path, pathlib.Path(self.cfg['User_Parameters_Full_Pipeline']['File_Names_And_Paths']['second_reference_path']).name)
         
         with open (self.conf_path, 'w') as f:
             yaml.dump(self.cfg, f, default_flow_style=False, Dumper=Nice_YAML_Dumper, sort_keys=False)

@@ -50,7 +50,7 @@ class VT_Setup():
 
         #This part of the code pulls all of the temperature parameters from the autoprocess.cif 
 
-        if not os.path.exists(os.path.join(self.cfg['System_Parameters']['results_path'], 'Just Temps.csv')):
+        if not os.path.exists(os.path.join(self.cfg['System_Parameters']['results_path'], 'Just_Temps.csv')):
 
             os.chdir(self.cfg['System_Parameters']['analysis_path'])
 
@@ -80,35 +80,35 @@ class VT_Setup():
             os.chdir(self.cfg['System_Parameters']['results_path'])    
 
         
-        data = {'_diffrn_ambient_temperature':[], '_diffrn_ambient_temperature_error': []}
-        
-        temp_cif_path = os.path.join(self.cfg['System_Parameters']['results_path'], 'temp_cif.cif')
+            data = {'_diffrn_ambient_temperature':[], '_diffrn_ambient_temperature_error': []}
+            
+            temp_cif_path = os.path.join(self.cfg['System_Parameters']['results_path'], 'temp_cif.cif')
 
-        with open (temp_cif_path, 'rt') as f:
-            for line in f:
-                if '_diffrn_ambient_temperature' in line:
-                    if '(' in line:
-                        temp = line.strip('_diffrn_ambient_temperature').strip(' \n').split('(')
-                        temp3 = temp[1].strip(')')
-                        data['_diffrn_ambient_temperature'].append(float(temp[0]))
-                        if '.' in line:
-                            temp2 = temp[0].split('.')
-                            data['_diffrn_ambient_temperature_error'].append(int(temp3)*10**-(int(len(temp2[1]))))
+            with open (temp_cif_path, 'rt') as f:
+                for line in f:
+                    if '_diffrn_ambient_temperature' in line:
+                        if '(' in line:
+                            temp = line.strip('_diffrn_ambient_temperature').strip(' \n').split('(')
+                            temp3 = temp[1].strip(')')
+                            data['_diffrn_ambient_temperature'].append(float(temp[0]))
+                            if '.' in line:
+                                temp2 = temp[0].split('.')
+                                data['_diffrn_ambient_temperature_error'].append(int(temp3)*10**-(int(len(temp2[1]))))
+                            else:
+                                data['_diffrn_ambient_temperature_error'].append(int(temp3))
                         else:
-                            data['_diffrn_ambient_temperature_error'].append(int(temp3))
-                    else:
-                        temp = line.strip('_diffrn_ambient_temperature').strip(' \n')
-                        data['_diffrn_ambient_temperature'].append(float(temp))
-                        data['_diffrn_ambient_temperature_error'].append(0)
-        
-        #Saves to a new .csv file which the program refers to at later points - if it already exists, won't make again 
+                            temp = line.strip('_diffrn_ambient_temperature').strip(' \n')
+                            data['_diffrn_ambient_temperature'].append(float(temp))
+                            data['_diffrn_ambient_temperature_error'].append(0)
+            
+            #Saves to a new .csv file which the program refers to at later points - if it already exists, won't make again 
 
-        self.temp_df = pd.DataFrame(data)
+            self.temp_df = pd.DataFrame(data)
 
-        self.temp_df.to_csv('Just_Temps.csv', index = None)
+            self.temp_df.to_csv('Just_Temps.csv', index = None)
 
-        os.remove(os.path.join(self.cfg['System_Parameters']['results_path'], 'temp_cif.cif'))
-        
+            os.remove(os.path.join(self.cfg['System_Parameters']['results_path'], 'temp_cif.cif'))
+            
     def Ref_Setup(self):
                 
         #Finds the space group and cell parameters of the reference structure and saves them to the config file 
